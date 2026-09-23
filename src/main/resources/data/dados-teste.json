@@ -1,0 +1,239 @@
+{
+  "description": "Cadastros fictícios para testes locais. Imagens, movimentações e históricos iniciam vazios e são preenchidos pelas operações do usuário.",
+  "demoPassword": "EstacionaTec@123",
+  "people": [
+    {
+      "name": "Maria Silva",
+      "document": "123.456.789-00",
+      "email": "maria@edu.br",
+      "phone": "(11) 99999-1111",
+      "type": "Aluno",
+      "key": "p1"
+    },
+    {
+      "name": "Carlos Santos",
+      "document": "987.654.321-00",
+      "email": "carlos@edu.br",
+      "phone": "(11) 99999-2222",
+      "type": "Professor",
+      "key": "p2"
+    },
+    {
+      "name": "Ana Paula",
+      "document": "456.789.123-00",
+      "email": "ana@edu.br",
+      "phone": "(11) 99999-3333",
+      "type": "Funcionário",
+      "key": "p3"
+    },
+    {
+      "key": "p4",
+      "name": "Roberto Lima",
+      "document": null,
+      "email": null,
+      "phone": null,
+      "type": "Aluno"
+    },
+    {
+      "key": "p5",
+      "name": "Fernanda Costa",
+      "document": null,
+      "email": null,
+      "phone": null,
+      "type": "Professor"
+    }
+  ],
+  "vehicles": [
+    {
+      "id": 1,
+      "plate": "ABC-1234",
+      "model": "Honda Civic",
+      "color": "Prata",
+      "owner": "Maria Silva",
+      "type": "Carro",
+      "key": "v1",
+      "ownerKey": "p1",
+      "brand": "Honda"
+    },
+    {
+      "id": 2,
+      "plate": "XYZ-5678",
+      "model": "Toyota Corolla",
+      "color": "Preto",
+      "owner": "Carlos Santos",
+      "type": "Carro",
+      "key": "v2",
+      "ownerKey": "p2",
+      "brand": "Toyota"
+    },
+    {
+      "id": 3,
+      "plate": "DEF-9012",
+      "model": "Honda CG 160",
+      "color": "Vermelha",
+      "owner": "Ana Paula",
+      "type": "Moto",
+      "key": "v3",
+      "ownerKey": "p3",
+      "brand": "Honda"
+    },
+    {
+      "key": "v4",
+      "plate": "GHI-3456",
+      "ownerKey": "p4",
+      "model": "Não informado",
+      "brand": "",
+      "color": "",
+      "type": "Carro"
+    },
+    {
+      "key": "v5",
+      "plate": "JKL-7890",
+      "ownerKey": "p5",
+      "model": "Não informado",
+      "brand": "",
+      "color": "",
+      "type": "Carro"
+    }
+  ],
+  "users": [
+    {
+      "name": "João Carlos",
+      "username": "joao.carlos",
+      "email": "joao@edu.br",
+      "role": "Administrador",
+      "status": "Ativo"
+    },
+    {
+      "name": "Marcos Oliveira",
+      "username": "marcos.oliveira",
+      "email": "marcos@edu.br",
+      "role": "Porteiro",
+      "status": "Ativo"
+    },
+    {
+      "name": "Juliana Souza",
+      "username": "juliana.souza",
+      "email": "juliana@edu.br",
+      "role": "Porteiro",
+      "status": "Inativo"
+    }
+  ],
+  "stays": [],
+  "images": [],
+  "reports": [
+    {
+      "name": "Relatório Diário - 05/05/2026",
+      "date": "05/05/2026 18:00",
+      "size": "245 KB"
+    },
+    {
+      "name": "Relatório Semanal - Semana 18",
+      "date": "04/05/2026 23:59",
+      "size": "1.2 MB"
+    },
+    {
+      "name": "Relatório Mensal - Abril 2026",
+      "date": "01/05/2026 00:00",
+      "size": "3.5 MB"
+    }
+  ],
+  "originalFrontend": {
+    "registry": {
+      "vehicles": [
+        {
+          "id": 1,
+          "plate": "ABC-1234",
+          "model": "Honda Civic",
+          "color": "Prata",
+          "owner": "Maria Silva",
+          "type": "Carro"
+        },
+        {
+          "id": 2,
+          "plate": "XYZ-5678",
+          "model": "Toyota Corolla",
+          "color": "Preto",
+          "owner": "Carlos Santos",
+          "type": "Carro"
+        },
+        {
+          "id": 3,
+          "plate": "DEF-9012",
+          "model": "Honda CG 160",
+          "color": "Vermelha",
+          "owner": "Ana Paula",
+          "type": "Moto"
+        }
+      ],
+      "people": [
+        {
+          "name": "Maria Silva",
+          "document": "123.456.789-00",
+          "email": "maria@edu.br",
+          "phone": "(11) 99999-1111",
+          "type": "Aluno"
+        },
+        {
+          "name": "Carlos Santos",
+          "document": "987.654.321-00",
+          "email": "carlos@edu.br",
+          "phone": "(11) 99999-2222",
+          "type": "Professor"
+        },
+        {
+          "name": "Ana Paula",
+          "document": "456.789.123-00",
+          "email": "ana@edu.br",
+          "phone": "(11) 99999-3333",
+          "type": "Funcionário"
+        }
+      ],
+      "entries": []
+    },
+    "usuarios": {
+      "users": [
+        {
+          "name": "João Carlos",
+          "username": "joao.carlos",
+          "email": "joao@edu.br",
+          "role": "Administrador",
+          "status": "Ativo"
+        },
+        {
+          "name": "Marcos Oliveira",
+          "username": "marcos.oliveira",
+          "email": "marcos@edu.br",
+          "role": "Porteiro",
+          "status": "Ativo"
+        },
+        {
+          "name": "Juliana Souza",
+          "username": "juliana.souza",
+          "email": "juliana@edu.br",
+          "role": "Porteiro",
+          "status": "Inativo"
+        }
+      ]
+    },
+    "relatorios": {
+      "recentReports": [
+        {
+          "name": "Relatório Diário - 05/05/2026",
+          "date": "05/05/2026 18:00",
+          "size": "245 KB"
+        },
+        {
+          "name": "Relatório Semanal - Semana 18",
+          "date": "04/05/2026 23:59",
+          "size": "1.2 MB"
+        },
+        {
+          "name": "Relatório Mensal - Abril 2026",
+          "date": "01/05/2026 00:00",
+          "size": "3.5 MB"
+        }
+      ]
+    }
+  }
+}
