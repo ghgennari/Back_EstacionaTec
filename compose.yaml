@@ -1,0 +1,34 @@
+services:
+  api:
+    image: ${API_IMAGE:-estacionatec-api:local}
+    build: .
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 45s
+    ports:
+      - "${API_BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8080}:8080"
+      - "10000-10019:10000-10019/udp"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD no servidor}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Configure ADMIN_EMAIL no servidor}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Configure ADMIN_PASSWORD no servidor}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrador}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      CAMERA_SOURCE: ${CAMERA_SOURCE:-IP}
+      CAMERA_RTSP_URL: ${CAMERA_RTSP_URL:-}
+      CAMERA_RTSP_TRANSPORT: ${CAMERA_RTSP_TRANSPORT:-udp}
+      CAMERA_SNAPSHOT_URL: ${CAMERA_SNAPSHOT_URL:-}
+      ESP32_OPEN_URL: ${ESP32_OPEN_URL:-}
+      TZ: America/Sao_Paulo
+    volumes:
+      - api-data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  api-data:
