@@ -15,6 +15,8 @@ import java.util.List;
 
 @Configuration
 public class SecurityConfig {
+    @org.springframework.beans.factory.annotation.Value("${estacionatec.cors.origins:http://localhost:4200,http://127.0.0.1:4200}")
+    private String origens;
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -28,9 +30,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/recuperar-senha", "/h2-console/**", "/error").permitAll()
+                        .requestMatchers("/health", "/api/auth/login", "/api/auth/recuperar-senha", "/h2-console/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/usuarios/**").hasRole("Administrador")
+                        .requestMatchers("/api/usuarios/**", "/api/pessoas/**", "/api/relatorios/**")
+                        .hasRole("Administrador")
                         .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
                         .requestMatchers("/api/pessoas/**", "/api/veiculos/**").hasRole("Administrador")
                         .requestMatchers("/api/movimentacoes/**", "/api/cancela/**", "/api/camera/**", "/api/imagens/**")
@@ -54,7 +57,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200", "http://127.0.0.1:4200"));
+        config.setAllowedOrigins(java.util.Arrays.stream(origens.split(","))
+                .map(String::trim).filter(origem -> !origem.isEmpty()).toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         var source = new UrlBasedCorsConfigurationSource();
