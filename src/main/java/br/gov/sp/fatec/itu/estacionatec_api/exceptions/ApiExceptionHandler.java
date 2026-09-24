@@ -1,6 +1,7 @@
 package br.gov.sp.fatec.itu.estacionatec_api.exceptions;
 
 import br.gov.sp.fatec.itu.estacionatec_api.dto.Dados.Mensagem;
+import br.gov.sp.fatec.itu.estacionatec_api.dto.Dados.Erro;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,8 +12,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 @RestControllerAdvice
 public class ApiExceptionHandler {
     @ExceptionHandler(RegraNegocioException.class)
-    public ResponseEntity<Mensagem> regra(RegraNegocioException exception) {
-        return ResponseEntity.status(exception.getStatus()).body(new Mensagem(exception.getMessage()));
+    public ResponseEntity<Erro> regra(RegraNegocioException exception) {
+        return ResponseEntity.status(exception.getStatus()).body(new Erro(exception.getMessage(), exception.getCodigo()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

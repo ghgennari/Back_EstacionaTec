@@ -24,9 +24,17 @@ public class Esp32Client {
     }
 
     public void abrir(Long eventoId) {
+        abrirComando("evento-" + eventoId);
+    }
+
+    public void abrirManualmente() {
+        abrirComando("manual-" + java.util.UUID.randomUUID());
+    }
+
+    private void abrirComando(String commandId) {
         if (!configurado()) {
             throw new RegraNegocioException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Movimentação registrada, mas o portão não abriu: ESP32 não conectado.");
+                    "O portão não abriu: ESP32 não conectado.");
         }
         HttpURLConnection connection = null;
         try {
@@ -37,7 +45,7 @@ public class Esp32Client {
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json");
-            byte[] body = ("{\"commandId\":\"evento-" + eventoId + "\",\"action\":\"OPEN\"}")
+            byte[] body = ("{\"commandId\":\"" + commandId + "\",\"action\":\"OPEN\"}")
                     .getBytes(StandardCharsets.UTF_8);
             try (var output = connection.getOutputStream()) {
                 output.write(body);
@@ -48,7 +56,7 @@ public class Esp32Client {
             try (var input = connection.getInputStream()) {
                 var resposta = mapper.readTree(input.readNBytes(4096));
                 if (!resposta.path("opened").asBoolean()
-                        || !("evento-" + eventoId).equals(resposta.path("commandId").asText())) {
+                        || !commandId.equals(resposta.path("commandId").asText())) {
                     throw new java.io.IOException("Confirmação inválida.");
                 }
             }

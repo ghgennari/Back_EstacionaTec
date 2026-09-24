@@ -41,7 +41,12 @@ public final class Dados {
     }
 
     public record MovimentacaoRequest(@NotBlank String plate, Long imageId,
-            @NotBlank @Pattern(regexp = "[0-9a-fA-F-]{36}") String requestId) {
+            @NotBlank @Pattern(regexp = "[0-9a-fA-F-]{36}") String requestId,
+            @jakarta.validation.Valid VisitanteRequest visitor) {
+    }
+
+    public record VisitanteRequest(@NotBlank @Size(max = 150) String responsibleName,
+            @NotBlank @Size(max = 50) String model) {
     }
 
     public record MovimentacaoResponse(Long id, Long vehicleId, String plate, String owner,
@@ -61,6 +66,9 @@ public final class Dados {
     }
 
     public record Mensagem(String message) {
+    }
+
+    public record Erro(String message, String code) {
     }
 
     public record RelatorioRequest(@NotNull java.time.LocalDate start, @NotNull java.time.LocalDate end,

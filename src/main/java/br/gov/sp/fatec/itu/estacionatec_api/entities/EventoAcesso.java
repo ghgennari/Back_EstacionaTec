@@ -14,7 +14,7 @@ public class EventoAcesso implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "veiculo_id")
     private Veiculo veiculo;
 
@@ -55,7 +55,29 @@ public class EventoAcesso implements Serializable {
 
     private String modelo;
 
+    // Preenchida somente enquanto a entrada sem cadastro estiver ativa.
+    @Column(unique = true, length = 10)
+    private String placaVisitanteAtivo;
+
     private String statusCancela = "PENDENTE";
+    private boolean capturaAutomatica;
+    private String avisoImagem;
+
+    public boolean isCapturaAutomatica() {
+        return capturaAutomatica;
+    }
+
+    public void setCapturaAutomatica(boolean capturaAutomatica) {
+        this.capturaAutomatica = capturaAutomatica;
+    }
+
+    public String getAvisoImagem() {
+        return avisoImagem;
+    }
+
+    public void setAvisoImagem(String avisoImagem) {
+        this.avisoImagem = avisoImagem;
+    }
 
     public EventoAcesso() {
     }
@@ -182,6 +204,14 @@ public class EventoAcesso implements Serializable {
 
     public String getStatusCancela() {
         return statusCancela;
+    }
+
+    public String getPlacaVisitanteAtivo() {
+        return placaVisitanteAtivo;
+    }
+
+    public void setPlacaVisitanteAtivo(String placaVisitanteAtivo) {
+        this.placaVisitanteAtivo = placaVisitanteAtivo;
     }
 
     public void setStatusCancela(String statusCancela) {

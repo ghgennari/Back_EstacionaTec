@@ -47,6 +47,7 @@ public class MovimentacaoController {
 
     private MovimentacaoResponse registrar(MovimentacaoRequest dados, String tipo, Long usuarioId) {
         Long eventoId = movimentacoes.registrar(dados, tipo, usuarioId);
+        if (tipo.equals("Entrada")) movimentacoes.capturarImagemEntrada(eventoId, usuarioId);
         String aviso = null;
         try {
             cancela.abrir(eventoId, usuarioId);
@@ -54,5 +55,10 @@ public class MovimentacaoController {
             aviso = exception.getMessage();
         }
         return movimentacoes.resposta(eventoId, aviso);
+    }
+
+    @PostMapping("/cancela/abrir-manualmente")
+    public Mensagem abrirManualmente(Authentication auth) {
+        return new Mensagem(cancela.abrirManualmente((Long) auth.getPrincipal()));
     }
 }
