@@ -28,6 +28,8 @@ public class ImagemService {
         this.diretorio = Path.of(diretorio).toAbsolutePath().normalize();
     }
 
+    @org.springframework.transaction.annotation.Transactional(
+            propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public ImagemResponse capturar(Long usuarioId) {
         try {
             return salvar(camera.capturar(), "CAMERA", usuarioId);
@@ -35,6 +37,24 @@ public class ImagemService {
             auditoria.registrar(usuarioId, "FALHA_CAMERA", exception.getMessage());
             throw exception;
         }
+    }
+
+    @org.springframework.transaction.annotation.Transactional(
+            propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public ImagemResponse capturarAberturaManual(Long usuarioId) {
+        var foto = capturar(usuarioId);
+        var imagem = imagens.findById(foto.id()).orElseThrow();
+        imagem.setOrigem("CANCELA_MANUAL");
+        imagem.setTipoEvento("Abertura manual");
+        imagem.setStatus("Manual");
+        return dto(imagem);
+    }
+
+    public ImagemResponse capturarWebcam(byte[] bytes, Long usuarioId) {
+        if (!camera.usaWebcam()) {
+            throw RegraNegocioException.conflito("A fonte configurada não é webcam.");
+        }
+        return salvar(bytes, "WEBCAM", usuarioId);
     }
 
     public ImagemResponse salvar(byte[] bytes, String origem, Long usuarioId) {

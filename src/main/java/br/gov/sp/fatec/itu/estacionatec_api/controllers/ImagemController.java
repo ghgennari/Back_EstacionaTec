@@ -39,13 +39,31 @@ public class ImagemController {
 
     @GetMapping("/camera/status")
     public Map<String, Object> status() {
-        return Map.of("configured", camera.configurada(), "message", camera.configurada()
-                ? "Endereço configurado; use Capturar para verificar a conexão." : "Câmera não conectada.");
+        String mensagem = camera.usaWebcam()
+                ? "Webcam selecionada. Clique em Ativar webcam e permita o acesso no navegador."
+                : (camera.configurada() ? "Conectando à câmera IP..."
+                        : "Câmera IP não conectada. Configure o endereço de captura.");
+        return Map.of("source", camera.fonte().name(), "configured", camera.configurada(), "message", mensagem);
+    }
+
+    @GetMapping("/camera/preview")
+    public ResponseEntity<byte[]> visualizar() {
+        byte[] quadro = camera.capturar();
+        MediaType formato = quadro.length > 0 && quadro[0] == (byte) 0x89
+                ? MediaType.IMAGE_PNG : MediaType.IMAGE_JPEG;
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(formato).body(quadro);
     }
 
     @PostMapping("/camera/capturar")
     public ImagemResponse capturar(Authentication auth) {
         return imagens.capturar((Long) auth.getPrincipal());
+    }
+
+    @PostMapping(value = "/camera/webcam/capturar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public ImagemResponse capturarWebcam(@RequestParam("file") MultipartFile arquivo, Authentication auth)
+            throws IOException {
+        return imagens.capturarWebcam(arquivo.getBytes(), (Long) auth.getPrincipal());
     }
 
 }
