@@ -85,7 +85,8 @@ public class CadastroService {
         Veiculo veiculo = veiculos.findById(id)
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Veículo não encontrado."));
         if (eventos.existsByVeiculoId(id) || veiculo.isEstacionado()) {
-            throw RegraNegocioException.conflito("Veículo possui histórico. Desative sua autorização em vez de excluí-lo.");
+            throw RegraNegocioException.conflito("Este veículo não pode ser excluído porque possui histórico ou está no estacionamento. "
+                    + "Desativar a autorização impede novas entradas, mas permite registrar a saída e mantém o histórico.");
         }
         veiculos.delete(veiculo);
     }

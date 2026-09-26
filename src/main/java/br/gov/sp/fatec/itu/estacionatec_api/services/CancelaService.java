@@ -52,7 +52,7 @@ public class CancelaService {
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Registre uma movimentação antes de abrir o portão."));
         if (!evento.isAcessoAutorizado() || !usuarioId.equals(evento.getUsuarioId())
                 || evento.getDataHora().isBefore(LocalDateTime.now().minusMinutes(2))
-                || (evento.getVeiculo() != null
+                || (evento.getTipoEvento().equals("Entrada") && evento.getVeiculo() != null
                         && (!evento.getVeiculo().isAutorizado() || !evento.getVeiculo().getPessoa().isAtivo()))) {
             throw RegraNegocioException.conflito("Abertura não autorizada para este evento ou autorização expirada.");
         }

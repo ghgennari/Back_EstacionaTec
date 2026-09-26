@@ -251,6 +251,56 @@ class FluxoEstacionamentoTests {
         assertThat(request("POST", "/veiculos", Map.of("plate", "MER1C23", "ownerId", 1, "model", "Mercosul", "type", "Carro")).statusCode()).isEqualTo(201);
     }
 
+    @Test
+    void permiteSaidaEAberturaDaCancelaAposRevogarAutorizacaoOuInativarPessoa() throws Exception {
+        for (boolean desativarPessoa : List.of(false, true)) {
+            int numero = SEQUENCIA.incrementAndGet();
+            var pessoa = request("POST", "/pessoas", Map.of("name", "Responsável " + numero,
+                    "document", "SAI" + numero, "type", "Visitante"));
+            assertThat(pessoa.statusCode()).isEqualTo(201);
+            long pessoaId = json(pessoa).path("id").asLong();
+            String placa = "SAI" + numero;
+            var cadastro = request("POST", "/veiculos", Map.of("plate", placa, "ownerId", pessoaId,
+                    "model", "Uno", "type", "Carro"));
+            assertThat(cadastro.statusCode()).isEqualTo(201);
+            long veiculoId = json(cadastro).path("id").asLong();
+            var entrada = request("POST", "/movimentacoes/entrada",
+                    Map.of("plate", placa, "requestId", UUID.randomUUID().toString()));
+            assertThat(entrada.statusCode()).isEqualTo(200);
+            long entradaId = json(entrada).path("id").asLong();
+            var exclusao = request("DELETE", "/veiculos/" + veiculoId, null);
+            assertThat(exclusao.statusCode()).isEqualTo(409);
+            assertThat(json(exclusao).path("message").asText()).contains("permite registrar a saída");
+
+            var alteracao = desativarPessoa
+                    ? request("PUT", "/pessoas/" + pessoaId, Map.of("name", "Responsável " + numero,
+                            "document", "SAI" + numero, "type", "Visitante", "active", false))
+                    : request("PUT", "/veiculos/" + veiculoId, Map.of("plate", placa, "ownerId", pessoaId,
+                            "model", "Uno", "type", "Carro", "authorized", false));
+            assertThat(alteracao.statusCode()).isEqualTo(200);
+            assertThat(request("POST", "/cancela/abrir", Map.of("eventId", entradaId)).statusCode()).isEqualTo(409);
+
+            org.mockito.Mockito.doNothing().when(esp32).abrir(org.mockito.ArgumentMatchers.anyLong());
+            var dadosSaida = Map.of("plate", placa, "requestId", UUID.randomUUID().toString());
+            var saida = request("POST", "/movimentacoes/saida", dadosSaida);
+            assertThat(saida.statusCode()).isEqualTo(200);
+            assertThat(json(saida).path("gateStatus").asText()).isEqualTo("ABERTA");
+            long saidaId = json(saida).path("id").asLong();
+            org.mockito.Mockito.verify(esp32).abrir(saidaId);
+            assertThat(eventos.findById(saidaId).orElseThrow().getEntradaId()).isEqualTo(entradaId);
+            assertThat(veiculos.findById(veiculoId).orElseThrow().isEstacionado()).isFalse();
+            assertThat(request("GET", "/movimentacoes/ativos", null).body()).doesNotContain("SAI-" + numero);
+            assertThat(request("GET", "/historico", null).body()).contains("SAI-" + numero);
+            assertThat(json(request("POST", "/movimentacoes/saida", dadosSaida)).path("id").asLong()).isEqualTo(saidaId);
+            assertThat(request("POST", "/movimentacoes/saida",
+                    Map.of("plate", placa, "requestId", UUID.randomUUID().toString())).statusCode()).isEqualTo(409);
+            var novaEntrada = request("POST", "/movimentacoes/entrada",
+                    Map.of("plate", placa, "requestId", UUID.randomUUID().toString()));
+            assertThat(novaEntrada.statusCode()).isEqualTo(409);
+            assertThat(json(novaEntrada).path("message").asText()).contains("sem autorização ativa");
+        }
+    }
+
     private String novoVeiculo() throws Exception {
         String placa = "TST" + SEQUENCIA.incrementAndGet();
         var response = request("POST", "/veiculos", Map.of("plate", placa, "ownerId", 1,

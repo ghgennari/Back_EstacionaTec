@@ -139,7 +139,7 @@ public class MovimentacaoService {
 
     private void preencherMovimentacaoCadastrada(EventoAcesso evento, Veiculo veiculo,
             MovimentacaoRequest dados, boolean entrada) {
-        if (!veiculo.isAutorizado() || !veiculo.getPessoa().isAtivo()) {
+        if (entrada && (!veiculo.isAutorizado() || !veiculo.getPessoa().isAtivo())) {
             throw RegraNegocioException.conflito("Veículo ou proprietário sem autorização ativa.");
         }
         if (dados.visitor() != null) {
