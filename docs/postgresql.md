@@ -3,7 +3,7 @@
 O Docker Desktop deve estar iniciado. A API roda pelo Maven/VS Code e o banco
 roda em um container PostgreSQL 17, acessível somente em `localhost:5432`.
 O arquivo `compose.postgres.yaml` é independente do `compose.yaml` de produção,
-que ainda utiliza H2. Esta etapa não migra dados de bancos H2 existentes.
+que executa API e PostgreSQL no servidor (veja [Ubuntu Server](ubuntu-server.md)). Esta etapa não migra dados de bancos H2 existentes.
 
 No PowerShell, execute na pasta do projeto:
 

@@ -4,6 +4,9 @@ Back-end Java 21 e Spring Boot 4.1.1 integrado ao `estacionatec-web`, com Maven 
 
 ## Executar no VS Code
 
+Para hospedar API e PostgreSQL no notebook Ubuntu da rede local, siga
+[o roteiro do servidor](docs/ubuntu-server.md).
+
 Abra esta pasta como projeto. A configuração local em `.vscode/settings.json` aponta para o Java 21 encontrado na extensão Java do VS Code. Feche o terminal antigo usando a lixeira e abra um novo para carregar as variáveis.
 
 No Git Bash:

@@ -1,4 +1,7 @@
 HELP.md
+.env
+.env.*
+!.env.example
 .maven-cache/
 tmp/
 storage/
