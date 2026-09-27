@@ -3,6 +3,7 @@ WORKDIR /build
 COPY pom.xml ./
 COPY src/main ./src/main
 COPY src/test ./src/test
+COPY storage/camera.properties ./storage/camera.properties
 RUN mvn -B -ntp package
 
 FROM eclipse-temurin:21-jre-noble
@@ -15,6 +16,7 @@ RUN apt-get update \
     && chown -R estacionatec:estacionatec /app /data
 WORKDIR /app
 COPY --from=build --chown=estacionatec:estacionatec /build/target/estacionatec-api-0.0.1-SNAPSHOT.jar /app/api.jar
+COPY --chown=estacionatec:estacionatec storage/camera.properties /app/storage/camera.properties
 USER estacionatec
 ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080

@@ -4,7 +4,8 @@ HELP.md
 !.env.example
 .maven-cache/
 tmp/
-storage/
+storage/*
+!storage/camera.properties
 target/
 output/
 *.[pP][dD][fF]

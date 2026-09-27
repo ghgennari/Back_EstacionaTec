@@ -9,6 +9,8 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -27,7 +29,9 @@ public class RtspCameraClient {
             @Value("${estacionatec.camera.ffmpeg:ffmpeg}") String ffmpeg,
             @Value("${estacionatec.camera.rtsp-transport:tcp}") String transporte) {
         this.url = url;
-        this.ffmpeg = ffmpeg;
+        Path ffmpegLocal = Path.of("storage", "tools", "ffmpeg.exe");
+        this.ffmpeg = "ffmpeg".equals(ffmpeg) && System.getProperty("os.name").startsWith("Windows")
+                && Files.isRegularFile(ffmpegLocal) ? ffmpegLocal.toString() : ffmpeg;
         this.transporte = transporte;
     }
 
