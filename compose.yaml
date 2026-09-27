@@ -1,4 +1,20 @@
 services:
+  web:
+    image: ${WEB_IMAGE:-estacionatec-web:local}
+    build:
+      context: ${WEB_SOURCE_PATH:-../estacionatec-web}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_BIND_ADDRESS:-0.0.0.0}:${WEB_PORT:-80}:80"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   postgres:
     image: postgres:17
     restart: unless-stopped
