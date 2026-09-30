@@ -17,20 +17,27 @@ public class MovimentacaoService {
     private final ImagemCapturadaRepository imagens;
     private final AuditoriaService auditoria;
     private final ImagemService captura;
+    private final PerfilRepository perfis;
 
     public MovimentacaoService(VeiculoRepository veiculos, EventoAcessoRepository eventos,
-            ImagemCapturadaRepository imagens, AuditoriaService auditoria, ImagemService captura) {
+            ImagemCapturadaRepository imagens, AuditoriaService auditoria, ImagemService captura,
+            PerfilRepository perfis) {
         this.veiculos = veiculos;
         this.eventos = eventos;
         this.imagens = imagens;
         this.auditoria = auditoria;
         this.captura = captura;
+        this.perfis = perfis;
     }
 
     @Transactional
     public Long registrar(MovimentacaoRequest dados, String tipo, Long usuarioId) {
         try {
             String placa = CadastroService.normalizarPlaca(dados.plate());
+            // Coordena cadastro/alteração da placa com visitas, inclusive quando não há linha de veículo.
+            // O lock termina no registro; captura e acionamento continuam em suas transações atuais.
+            perfis.bloquearPorNome("Porteiro")
+                    .orElseThrow(() -> RegraNegocioException.conflito("Perfil de porteiro não configurado."));
             boolean entrada = tipo.equals("Entrada");
             if (!entrada && dados.visitor() != null) {
                 throw RegraNegocioException.conflito("Os dados do visitante só podem ser informados na entrada.");

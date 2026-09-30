@@ -75,11 +75,18 @@ public class CadastroService {
     }
 
     public VeiculoResponse salvarVeiculo(Long id, VeiculoRequest dados) {
+        // Mesmo bloqueio usado no registro de visitas: protege também placas ainda sem veículo.
+        perfis.bloquearPorNome("Porteiro")
+                .orElseThrow(() -> RegraNegocioException.conflito("Perfil de porteiro não configurado."));
+        String placa = normalizarPlaca(dados.plate());
+        if (eventos.bloquearVisitanteAtivo(placa).isPresent()) {
+            throw RegraNegocioException.conflito("Esta placa possui uma entrada de visitante ativa. Registre a saída antes de cadastrar ou alterar o veículo.");
+        }
         Veiculo veiculo = id == null ? new Veiculo() : veiculos.bloquearPorId(id)
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Veículo não encontrado."));
         veiculo.setPessoa(pessoas.findById(dados.ownerId())
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Proprietário não encontrado.")));
-        veiculo.setPlaca(normalizarPlaca(dados.plate()));
+        veiculo.setPlaca(placa);
         veiculo.setModelo(dados.model().trim());
         veiculo.setCor(dados.color());
         veiculo.setMarca(dados.brand());
