@@ -36,8 +36,18 @@ public class CadastroService {
     }
 
     public PessoaResponse salvarPessoa(Long id, PessoaRequest dados) {
+        bloquearContas();
         Pessoa pessoa = id == null ? new Pessoa() : pessoas.findById(id)
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Pessoa não encontrada."));
+        String email = dados.email() == null ? null : dados.email().trim().toLowerCase(Locale.ROOT);
+        if (id != null && usuarios.existsByPessoaId(id)) {
+            validarEmailLogin(email, id);
+        }
+        if (id != null && pessoa.isAtivo() && Boolean.FALSE.equals(dados.active())
+                && usuarios.existsByPessoaIdAndAtivoTrueAndPerfilNome(id, "Administrador")
+                && !usuarios.existsByAtivoTrueAndPessoaAtivoTrueAndPerfilNomeAndPessoaIdNot("Administrador", id)) {
+            throw ultimoAdministrador();
+        }
         String documento = dados.document().replaceAll("[^a-zA-Z0-9]", "");
         if (documento.isBlank()) {
             throw RegraNegocioException.conflito("Informe um documento válido.");
@@ -45,7 +55,7 @@ public class CadastroService {
         validarCategoria(dados.type());
         pessoa.setNome(dados.name().trim());
         pessoa.setDocumento(documento);
-        pessoa.setEmail(dados.email() == null ? null : dados.email().trim().toLowerCase(Locale.ROOT));
+        pessoa.setEmail(email);
         pessoa.setTelefone(dados.phone());
         pessoa.setCategoria(dados.type());
         pessoa.setAtivo(dados.active() == null || dados.active());
@@ -96,15 +106,18 @@ public class CadastroService {
     }
 
     public UsuarioResponse salvarUsuario(Long id, UsuarioRequest dados) {
+        bloquearContas();
         Usuario usuario = id == null ? new Usuario() : usuarios.findById(id)
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Usuário não encontrado."));
-        if (id == null && (dados.password() == null || dados.password().length() < 6)) {
+        if (id == null && (dados.password() == null || dados.password().isBlank() || dados.password().length() < 6)) {
             throw RegraNegocioException.conflito("A senha deve conter pelo menos 6 caracteres.");
         }
         Pessoa pessoa = usuario.getPessoa() == null ? new Pessoa() : usuario.getPessoa();
         String email = dados.email().trim().toLowerCase(Locale.ROOT);
-        usuarios.findByPessoaEmailIgnoreCase(email).filter(other -> !other.getId().equals(id))
-                .ifPresent(other -> { throw RegraNegocioException.conflito("E-mail já cadastrado."); });
+        validarEmailLogin(email, pessoa.getId());
+        if (!"Administrador".equals(dados.role()) || !"Ativo".equals(dados.status())) {
+            validarRemocaoAdministrador(usuario);
+        }
         pessoa.setNome(dados.name().trim());
         pessoa.setEmail(email);
         if (pessoa.getCategoria() == null) {
@@ -131,9 +144,38 @@ public class CadastroService {
         if (id.equals(atualId)) {
             throw RegraNegocioException.conflito("Você não pode excluir sua própria conta.");
         }
+        bloquearContas();
         Usuario usuario = usuarios.findById(id)
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Usuário não encontrado."));
+        validarRemocaoAdministrador(usuario);
         usuario.setAtivo(false);
+    }
+
+    private void bloquearContas() {
+        // Serializa alterações de identidade e de administradores entre instâncias da API,
+        // usando uma linha já existente, sem mudar o schema de produção.
+        perfis.bloquearPorNome("Administrador")
+                .orElseThrow(() -> RegraNegocioException.conflito("Perfil de administrador não configurado."));
+    }
+
+    private void validarEmailLogin(String email, Long pessoaId) {
+        if (email != null && !email.isBlank() && (pessoaId == null
+                ? usuarios.existsByPessoaEmailIgnoreCase(email)
+                : usuarios.existsByPessoaEmailIgnoreCaseAndPessoaIdNot(email, pessoaId))) {
+            throw RegraNegocioException.conflito("E-mail já cadastrado.");
+        }
+    }
+
+    private void validarRemocaoAdministrador(Usuario usuario) {
+        if (usuario.getId() != null && usuario.isAtivo() && usuario.getPessoa().isAtivo()
+                && "Administrador".equals(usuario.getPerfil().getNome())
+                && !usuarios.existsByAtivoTrueAndPessoaAtivoTrueAndPerfilNomeAndIdNot("Administrador", usuario.getId())) {
+            throw ultimoAdministrador();
+        }
+    }
+
+    private RegraNegocioException ultimoAdministrador() {
+        return RegraNegocioException.conflito("Mantenha ao menos um administrador ativo antes de alterar esta conta ou pessoa.");
     }
 
     public PessoaResponse pessoaDto(Pessoa p) {
