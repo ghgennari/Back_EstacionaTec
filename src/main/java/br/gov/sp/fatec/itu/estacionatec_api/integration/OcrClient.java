@@ -39,10 +39,7 @@ public class OcrClient {
     }
 
     public synchronized List<Leitura> reconhecer(byte[] imagem) throws Exception {
-        BufferedImage original = ImageIO.read(new ByteArrayInputStream(imagem));
-        if (original == null || (long) original.getWidth() * original.getHeight() > 16_000_000) {
-            throw new IllegalArgumentException("Imagem inválida para OCR.");
-        }
+        BufferedImage original = lerImagem(imagem);
         if (!(x >= 0 && y >= 0 && width > 0 && height > 0 && x + width <= 1 && y + height <= 1)) {
             throw new IllegalArgumentException("Região de leitura inválida.");
         }
@@ -73,6 +70,27 @@ public class OcrClient {
             }
         }
         return result;
+    }
+
+    private BufferedImage lerImagem(byte[] bytes) throws java.io.IOException {
+        try (var input = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
+            var readers = ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) throw new IllegalArgumentException("Imagem inválida para OCR.");
+            var reader = readers.next();
+            try {
+                reader.setInput(input);
+                int largura = reader.getWidth(0);
+                int altura = reader.getHeight(0);
+                if (largura <= 0 || altura <= 0 || (long) largura * altura > 16_000_000) {
+                    throw new IllegalArgumentException("Imagem inválida para OCR.");
+                }
+                BufferedImage imagem = reader.read(0);
+                if (imagem == null) throw new IllegalArgumentException("Imagem inválida para OCR.");
+                return imagem;
+            } finally {
+                reader.dispose();
+            }
+        }
     }
 
     public static List<String> extrairPlacas(String text) {
