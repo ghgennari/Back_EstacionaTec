@@ -301,6 +301,20 @@ class FluxoEstacionamentoTests {
         }
     }
 
+    @Test
+    void porteiroAcompanhaOcrSemRegistrarMovimentacaoEExigeAutenticacao() throws Exception {
+        token = json(request("POST", "/auth/login", Map.of("email", "marcos@edu.br",
+                "password", "EstacionaTec@123"))).path("token").asText();
+        long antes = eventos.count();
+        var response = request("POST", "/camera/ocr/acompanhar", null);
+        assertThat(response.statusCode()).isEqualTo(200);
+        // Este contexto usa webcam: o reconhecimento IP deve ficar desligado.
+        assertThat(json(response).path("enabled").asBoolean()).isFalse();
+        assertThat(eventos.count()).isEqualTo(antes);
+        token = null;
+        assertThat(request("POST", "/camera/ocr/acompanhar", null).statusCode()).isEqualTo(401);
+    }
+
     private String novoVeiculo() throws Exception {
         String placa = "TST" + SEQUENCIA.incrementAndGet();
         var response = request("POST", "/veiculos", Map.of("plate", placa, "ownerId", 1,
