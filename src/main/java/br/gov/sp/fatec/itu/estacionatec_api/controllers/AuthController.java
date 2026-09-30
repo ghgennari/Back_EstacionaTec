@@ -4,9 +4,7 @@ import br.gov.sp.fatec.itu.estacionatec_api.dto.Dados.*;
 import br.gov.sp.fatec.itu.estacionatec_api.security.SessaoService;
 import br.gov.sp.fatec.itu.estacionatec_api.security.LimiteLogin;
 import jakarta.servlet.http.HttpServletRequest;
-import br.gov.sp.fatec.itu.estacionatec_api.exceptions.RegraNegocioException;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -34,9 +32,4 @@ public class AuthController {
         return new Mensagem("Sessão encerrada.");
     }
 
-    @PostMapping("/recuperar-senha")
-    public Mensagem recuperarSenha() {
-        throw new RegraNegocioException(HttpStatus.SERVICE_UNAVAILABLE,
-                "O envio de e-mails ainda não está configurado. Solicite a redefinição ao administrador.");
-    }
 }

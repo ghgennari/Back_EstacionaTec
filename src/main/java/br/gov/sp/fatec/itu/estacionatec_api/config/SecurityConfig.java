@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/health", "/api/auth/login", "/api/auth/recuperar-senha", "/h2-console/**", "/error").permitAll()
+                        .requestMatchers("/health", "/api/auth/login", "/h2-console/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/usuarios/**", "/api/pessoas/**", "/api/relatorios/**")
                         .hasRole("Administrador")
