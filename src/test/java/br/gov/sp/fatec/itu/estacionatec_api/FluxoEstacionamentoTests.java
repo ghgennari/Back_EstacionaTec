@@ -543,6 +543,49 @@ class FluxoEstacionamentoTests {
         assertThat(pessoas.count()).isEqualTo(totalPessoas);
     }
 
+    @Test
+    void fotoDoVisitanteFicaNoHistoricoDeImagensEVinculadaAEntradaSemDuplicar() throws Exception {
+        token = json(request("POST", "/auth/login", Map.of("email", "marcos@edu.br",
+                "password", "EstacionaTec@123"))).path("token").asText();
+        var bytes = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB), "png", bytes);
+        org.mockito.Mockito.doReturn(bytes.toByteArray()).when(camera).capturar();
+        String placa = "FVI" + SEQUENCIA.incrementAndGet();
+        var dados = Map.of("plate", placa, "requestId", UUID.randomUUID().toString(),
+                "visitor", Map.of("responsibleName", "Visitante com imagem", "model", "Uno"));
+        long antes = imagens.count();
+        var resposta = request("POST", "/movimentacoes/entrada", dados);
+        assertThat(resposta.statusCode()).isEqualTo(200);
+        long eventoId = json(resposta).path("id").asLong();
+        var evento = eventos.findById(eventoId).orElseThrow();
+        assertThat(evento.getVeiculo()).isNull();
+        assertThat(evento.getImagem()).isNotNull();
+        long imagemId = evento.getImagem().getId();
+        var foto = imagens.findById(imagemId).orElseThrow();
+        assertThat(foto.getOrigem()).isEqualTo("CAMERA");
+        assertThat(foto.getPlacaDetectada()).isEqualTo(placa);
+        assertThat(foto.getTipoEvento()).isEqualTo("Entrada");
+        assertThat(foto.isDisponivel()).isTrue();
+        assertThat(foto.isUtilizada()).isTrue();
+
+        JsonNode fotoNoHistorico = null;
+        for (JsonNode item : json(request("GET", "/imagens", null))) {
+            if (item.path("id").asLong() == imagemId) fotoNoHistorico = item;
+        }
+        assertThat(fotoNoHistorico).isNotNull();
+        assertThat(fotoNoHistorico.path("owner").asText()).isEqualTo("Visitante com imagem");
+        assertThat(fotoNoHistorico.path("available").asBoolean()).isTrue();
+        assertThat(request("GET", "/imagens/" + imagemId + "/arquivo", null).statusCode()).isEqualTo(200);
+        assertThat(request("GET", "/historico", null).body()).contains("FVI-" + placa.substring(3));
+
+        var reenvio = request("POST", "/movimentacoes/entrada", dados);
+        assertThat(reenvio.statusCode()).isEqualTo(200);
+        assertThat(json(reenvio).path("id").asLong()).isEqualTo(eventoId);
+        assertThat(imagens.count()).isEqualTo(antes + 1);
+        assertThat(eventos.findById(eventoId).orElseThrow().getImagem().getId()).isEqualTo(imagemId);
+        org.mockito.Mockito.verify(camera, org.mockito.Mockito.times(1)).capturar();
+    }
+
     private Map<String, Object> movimento(String placa, long imagemId, String requestId) {
         return Map.of("plate", placa, "imageId", imagemId, "requestId", requestId);
     }
