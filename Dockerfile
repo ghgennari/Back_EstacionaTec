@@ -9,6 +9,7 @@ RUN mvn -B -ntp package
 FROM eclipse-temurin:21-jre-noble
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg curl ca-certificates \
+        tesseract-ocr tesseract-ocr-eng libfontconfig1 \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 estacionatec \
     && useradd --uid 10001 --gid estacionatec --no-create-home estacionatec \
@@ -19,6 +20,12 @@ COPY --from=build --chown=estacionatec:estacionatec /build/target/estacionatec-a
 COPY --chown=estacionatec:estacionatec storage/camera.properties /app/storage/camera.properties
 USER estacionatec
 ENV SPRING_PROFILES_ACTIVE=prod
+# OcrClient usa o modelo instalado no Linux, sem extrair recursos do JAR.
+ENV OCR_DATA_PATH=/usr/share/tesseract-ocr/5/tessdata
+# Verifica dependencias nativas e leitura do modelo com o usuario da API.
+RUN tesseract --version \
+    && test -r "$OCR_DATA_PATH/eng.traineddata" \
+    && tesseract --list-langs
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl --fail --silent http://127.0.0.1:8080/health || exit 1
