@@ -5,6 +5,8 @@ import br.gov.sp.fatec.itu.estacionatec_api.integration.OcrClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.UUID;
 
 @Service
 public class ReconhecimentoPlacaService {
+    private static final Logger log = LoggerFactory.getLogger(ReconhecimentoPlacaService.class);
     public record Estado(boolean enabled, String status, String message, String detectionId,
             String plate, Float confidence, Instant detectedAt) { }
 
@@ -27,6 +30,8 @@ public class ReconhecimentoPlacaService {
     private Estado ultimaConfirmada;
     private long vistaEm;
     private long ultimoQuadro;
+    private String ultimaFalha;
+    private long ultimoLogFalha;
 
     public ReconhecimentoPlacaService(CameraClient camera, OcrClient ocr,
             @Value("${estacionatec.ocr.enabled:true}") boolean enabled,
@@ -53,9 +58,24 @@ public class ReconhecimentoPlacaService {
     @Scheduled(fixedDelayString = "${estacionatec.ocr.interval-ms:1500}")
     public void analisar() {
         if (!enabled || System.currentTimeMillis() > acompanharAte || camera.usaWebcam()) return;
+        String etapa = "CAPTURA";
         try {
-            processar(ocr.reconhecer(camera.capturar()), System.currentTimeMillis());
+            byte[] imagem = camera.capturar();
+            etapa = "OCR";
+            var leituras = ocr.reconhecer(imagem);
+            etapa = "CONFIRMACAO";
+            processar(leituras, System.currentTimeMillis());
+            ultimaFalha = null;
         } catch (Exception | LinkageError exception) {
+            String tipo = exception.getClass().getName();
+            String falha = etapa + ":" + tipo;
+            long agora = System.currentTimeMillis();
+            if (!falha.equals(ultimaFalha) || agora - ultimoLogFalha >= 60_000) {
+                // Nao registrar mensagem/stack trace: podem conter credenciais da camera.
+                log.warn("Falha no reconhecimento de placa: etapa={}, tipo={}", etapa, tipo);
+                ultimaFalha = falha;
+                ultimoLogFalha = agora;
+            }
             candidata = null;
             confirmacoes = 0;
             presente = null;
