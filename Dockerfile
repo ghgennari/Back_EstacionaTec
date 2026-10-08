@@ -13,12 +13,19 @@ RUN mkdir /build/ocr-check \
 FROM eclipse-temurin:21-jre-noble
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg curl ca-certificates \
-        tesseract-ocr tesseract-ocr-eng libfontconfig1 \
+        tesseract-ocr tesseract-ocr-eng liblept5 libfontconfig1 \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 estacionatec \
     && useradd --uid 10001 --gid estacionatec --no-create-home estacionatec \
     && mkdir -p /app /data/banco /data/imagens \
     && chown -R estacionatec:estacionatec /app /data
+# Lept4J procura "leptonica"; Ubuntu Noble fornece a biblioteca como liblept.so.5.
+# Descobre o caminho instalado para funcionar tanto em amd64 quanto em arm64.
+RUN lept_library="$(ldconfig -p | awk '$1 == "liblept.so.5" {print $NF; exit}')" \
+    && test -n "$lept_library" \
+    && test -r "$lept_library" \
+    && ln -s "$lept_library" "$(dirname "$lept_library")/libleptonica.so" \
+    && ldconfig
 WORKDIR /app
 COPY --from=build --chown=estacionatec:estacionatec /build/target/estacionatec-api-0.0.1-SNAPSHOT.jar /app/api.jar
 COPY --chown=estacionatec:estacionatec storage/camera.properties /app/storage/camera.properties
