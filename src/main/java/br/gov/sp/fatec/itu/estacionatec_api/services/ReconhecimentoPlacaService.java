@@ -54,7 +54,7 @@ public class ReconhecimentoPlacaService {
         return atual;
     }
 
-    // Uma leitura compartilhada por todos os operadores. Não grava entradas nem abre a cancela.
+    // Leitura compartilhada; o acompanhamento autenticado consome a deteccao e registra a entrada.
     @Scheduled(fixedDelayString = "${estacionatec.ocr.interval-ms:1500}")
     public void analisar() {
         if (!enabled || System.currentTimeMillis() > acompanharAte || camera.usaWebcam()) return;
@@ -86,7 +86,7 @@ public class ReconhecimentoPlacaService {
     }
 
     synchronized void processar(List<OcrClient.Leitura> leituras, long agora) {
-        if (agora - ultimoQuadro > 5_000) {
+        if (agora - ultimoQuadro > 15_000) {
             candidata = null;
             confirmacoes = 0;
         }
@@ -102,13 +102,16 @@ public class ReconhecimentoPlacaService {
                     && agora - estado.detectedAt().toEpochMilli() <= 20_000) return;
             estado = new Estado(true, "AGUARDANDO", placas.size() > 1
                     ? "Mais de uma placa visível. Posicione um veículo por vez na área de leitura."
-                    : "Aguardando uma placa nítida na câmera.", null, null, null, null);
+                    : leituras.stream().anyMatch(l -> Float.isFinite(l.confidence()))
+                            ? "Leitura abaixo da confiança mínima. Aproxime a placa e ajuste foco/reflexos."
+                            : "OCR executado, sem placa reconhecida. Ajuste o enquadramento e o foco.",
+                    null, null, null, null);
             return;
         }
         String placa = placas.getFirst();
         if (placa.equals(presente)) {
             vistaEm = agora;
-            estado = new Estado(true, "DETECTADA", "Placa identificada. Confira antes de registrar a entrada.",
+            estado = new Estado(true, "DETECTADA", "Placa confirmada. Processando entrada automática.",
                     ultimaConfirmada.detectionId(), placa, ultimaConfirmada.confidence(), Instant.ofEpochMilli(agora));
             return;
         }
@@ -118,11 +121,11 @@ public class ReconhecimentoPlacaService {
             estado = new Estado(true, "CONFIRMANDO", "Confirmando leitura da placa...", null, null, null, null);
             return;
         }
-        float confidence = leituras.stream().filter(l -> placa.equals(l.plate()))
+        float confidence = leituras.stream().filter(l -> placa.equals(l.plate()) && Float.isFinite(l.confidence()))
                 .max(Comparator.comparing(OcrClient.Leitura::confidence)).orElseThrow().confidence();
         presente = placa;
         vistaEm = agora;
-        estado = new Estado(true, "DETECTADA", "Placa identificada. Confira antes de registrar a entrada.",
+        estado = new Estado(true, "DETECTADA", "Placa confirmada. Processando entrada automática.",
                 UUID.randomUUID().toString(), placa, confidence, Instant.ofEpochMilli(agora));
         ultimaConfirmada = estado;
     }

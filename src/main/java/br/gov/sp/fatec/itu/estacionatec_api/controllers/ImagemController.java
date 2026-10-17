@@ -3,6 +3,7 @@ package br.gov.sp.fatec.itu.estacionatec_api.controllers;
 import br.gov.sp.fatec.itu.estacionatec_api.dto.Dados.ImagemResponse;
 import br.gov.sp.fatec.itu.estacionatec_api.services.ImagemService;
 import br.gov.sp.fatec.itu.estacionatec_api.integration.CameraClient;
+import br.gov.sp.fatec.itu.estacionatec_api.integration.CameraPreview;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +16,12 @@ import java.util.*;
 public class ImagemController {
     private final ImagemService imagens;
     private final CameraClient camera;
+    private final CameraPreview preview;
 
-    public ImagemController(ImagemService imagens, CameraClient camera) {
+    public ImagemController(ImagemService imagens, CameraClient camera, CameraPreview preview) {
         this.imagens = imagens;
         this.camera = camera;
+        this.preview = preview;
     }
 
     @GetMapping("/imagens")
@@ -48,10 +51,8 @@ public class ImagemController {
 
     @GetMapping("/camera/preview")
     public ResponseEntity<byte[]> visualizar() {
-        byte[] quadro = camera.capturar();
-        MediaType formato = quadro.length > 0 && quadro[0] == (byte) 0x89
-                ? MediaType.IMAGE_PNG : MediaType.IMAGE_JPEG;
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(formato).body(quadro);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .contentType(MediaType.IMAGE_JPEG).body(preview.capturar());
     }
 
     @PostMapping("/camera/capturar")

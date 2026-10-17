@@ -48,7 +48,8 @@ public class OcrClient {
         BufferedImage region = original.getSubimage(left, top,
                 Math.max(1, (int) (width * original.getWidth())),
                 Math.max(1, (int) (height * original.getHeight())));
-        double scale = Math.min(2, Math.min(1600.0 / region.getWidth(), 1200.0 / region.getHeight()));
+        // Preserva mais detalhes do quadro; a previa do navegador tem resolucao independente.
+        double scale = Math.min(2, Math.min(2560.0 / region.getWidth(), 1440.0 / region.getHeight()));
         BufferedImage prepared = new BufferedImage(Math.max(1, (int) (region.getWidth() * scale)),
                 Math.max(1, (int) (region.getHeight() * scale)), BufferedImage.TYPE_BYTE_GRAY);
         Graphics2D graphics = prepared.createGraphics();
@@ -62,17 +63,50 @@ public class OcrClient {
         engine.setDatapath(dataPath.isBlank() ? LoadLibs.extractTessResources("tessdata").getAbsolutePath() : dataPath);
         engine.setLanguage("eng");
         engine.setOcrEngineMode(1);
+        engine.setVariable("load_system_dawg", "0");
+        engine.setVariable("load_freq_dawg", "0");
         engine.setPageSegMode(11);
         List<Leitura> result = new ArrayList<>();
-        for (var line : engine.getWords(prepared, ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE)) {
+        var lines = engine.getWords(prepared, ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE);
+        for (var line : lines) {
             for (String plate : extrairPlacas(line.getText())) {
                 result.add(new Leitura(plate, line.getConfidence()));
+            }
+        }
+        // Rele as linhas candidatas ampliadas como uma linha unica. Limite de trabalho
+        // evita executar dezenas de OCRs em uma cena cheia de texto.
+        int tentativas = 0;
+        for (var line : lines) {
+            if (tentativas >= 4) break;
+            if (line.getConfidence() >= 70 && !extrairPlacas(line.getText()).isEmpty()) continue;
+            String text = line.getText().replaceAll("[^A-Za-z0-9]", "");
+            var box = line.getBoundingBox();
+            if (text.length() < 6 || text.length() > 12 || box.width < box.height * 2
+                    || box.width > box.height * 12) continue;
+            tentativas++;
+            var bounds = new java.awt.Rectangle(Math.max(0, box.x - 10), Math.max(0, box.y - 10),
+                    box.width + 20, box.height + 20).intersection(
+                            new java.awt.Rectangle(0, 0, prepared.getWidth(), prepared.getHeight()));
+            double factor = Math.min(3, 1200.0 / bounds.width);
+            BufferedImage linha = new BufferedImage((int) (bounds.width * factor),
+                    Math.max(1, (int) (bounds.height * factor)), BufferedImage.TYPE_BYTE_GRAY);
+            Graphics2D g = linha.createGraphics();
+            try {
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g.drawImage(prepared.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height),
+                        0, 0, linha.getWidth(), linha.getHeight(), null);
+            } finally { g.dispose(); }
+            engine.setPageSegMode(7);
+            for (var word : engine.getWords(linha, ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE)) {
+                for (String plate : extrairPlacas(word.getText())) {
+                    result.add(new Leitura(plate, word.getConfidence()));
+                }
             }
         }
         return result;
     }
 
-    private BufferedImage lerImagem(byte[] bytes) throws java.io.IOException {
+    static BufferedImage lerImagem(byte[] bytes) throws java.io.IOException {
         try (var input = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
             var readers = ImageIO.getImageReaders(input);
             if (!readers.hasNext()) throw new IllegalArgumentException("Imagem inválida para OCR.");

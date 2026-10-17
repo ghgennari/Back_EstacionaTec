@@ -77,7 +77,7 @@ public class RtspCameraClient {
             Process novo = new ProcessBuilder(ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin",
                     "-rtsp_transport", transporte, "-min_port", "10000", "-max_port", "10019",
                     "-timeout", "5000000", "-i", url,
-                    "-an", "-vf", "fps=5,scale=1280:-2", "-c:v", "mjpeg", "-q:v", "5",
+                    "-an", "-vf", "fps=2,scale=w='min(1920,iw)':h=-2", "-c:v", "mjpeg", "-q:v", "2",
                     "-f", "image2pipe", "pipe:1")
                     .redirectError(ProcessBuilder.Redirect.DISCARD).start();
             processo = novo;
