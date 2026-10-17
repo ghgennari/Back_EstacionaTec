@@ -58,6 +58,21 @@ class EntradaOcrIntegracaoTests {
     }
 
     @Test
+    void entradaDaWebcamSalvaQuadroLocalMesmoSemCameraIp() throws Exception {
+        cadastrar("OCR1004", true, true);
+        byte[] quadro;
+        try (var foto = getClass().getResourceAsStream("/ocr/placa-ABC1234.png")) {
+            quadro = foto.readAllBytes();
+        }
+        var deteccao = detectar("OCR1004");
+        assertThat(automatico.registrar(deteccao, operador(), quadro).status()).isEqualTo("ENTRADA_REGISTRADA");
+        var evento = eventos.findByRequestId(deteccao.detectionId()).orElseThrow();
+        assertThat(evento.getImagem().getOrigem()).isEqualTo("WEBCAM");
+        assertThat(evento.getImagem().isUtilizada()).isTrue();
+        verifyNoInteractions(camera);
+    }
+
+    @Test
     void desconhecidoNaoAutorizadoEProprietarioInativoNaoEntram() {
         cadastrar("OCR1002", false, true);
         cadastrar("OCR1003", true, false);

@@ -107,6 +107,16 @@ public class MovimentacaoService {
 
     @Transactional
     public void capturarImagemEntrada(Long eventoId, Long usuarioId) {
+        anexarImagemEntrada(eventoId, usuarioId, () -> captura.capturar(usuarioId));
+    }
+
+    @Transactional
+    public void capturarImagemEntradaWebcam(Long eventoId, Long usuarioId, byte[] quadro) {
+        anexarImagemEntrada(eventoId, usuarioId, () -> captura.salvar(quadro, "WEBCAM", usuarioId));
+    }
+
+    private void anexarImagemEntrada(Long eventoId, Long usuarioId,
+            java.util.function.Supplier<ImagemResponse> fotografar) {
         EventoAcesso evento = eventos.bloquear(eventoId).orElseThrow();
         if (!evento.getTipoEvento().equals("Entrada") || !usuarioId.equals(evento.getUsuarioId())
                 || evento.getImagem() != null || evento.isCapturaAutomatica()) {
@@ -115,7 +125,7 @@ public class MovimentacaoService {
         // O registro já foi confirmado. Reenvios não devem gerar novas fotos.
         evento.setCapturaAutomatica(true);
         try {
-            var foto = captura.capturar(usuarioId);
+            var foto = fotografar.get();
             ImagemCapturada imagem = imagens.bloquear(foto.id()).orElseThrow();
             imagem.setUtilizada(true);
             imagem.setPlacaDetectada(evento.getPlaca());

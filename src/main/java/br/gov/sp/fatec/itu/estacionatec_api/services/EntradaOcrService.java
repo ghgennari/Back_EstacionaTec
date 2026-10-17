@@ -23,6 +23,11 @@ public class EntradaOcrService {
     // MovimentacaoService tambem usa locks no banco e requestId unico.
     public synchronized ReconhecimentoPlacaService.Estado registrar(
             ReconhecimentoPlacaService.Estado estado, Long usuarioId) {
+        return registrar(estado, usuarioId, null);
+    }
+
+    public synchronized ReconhecimentoPlacaService.Estado registrar(
+            ReconhecimentoPlacaService.Estado estado, Long usuarioId, byte[] quadroWebcam) {
         if (!estado.enabled() || !"DETECTADA".equals(estado.status()) || estado.detectionId() == null
                 || estado.plate() == null || estado.detectedAt() == null
                 || estado.detectedAt().isBefore(Instant.now().minusSeconds(5))) return estado;
@@ -33,7 +38,8 @@ public class EntradaOcrService {
         try {
             Long id = movimentos.registrar(new MovimentacaoRequest(estado.plate(), null,
                     estado.detectionId(), null), "Entrada", usuarioId);
-            movimentos.capturarImagemEntrada(id, usuarioId);
+            if (quadroWebcam == null) movimentos.capturarImagemEntrada(id, usuarioId);
+            else movimentos.capturarImagemEntradaWebcam(id, usuarioId, quadroWebcam);
             String aviso = null;
             try {
                 cancela.abrir(id, usuarioId);

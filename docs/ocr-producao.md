@@ -1,5 +1,36 @@
 # OCR e entrada automatica
 
+## Alternativa: webcam do computador
+
+Administradores podem escolher **Camera IP** ou **Camera deste computador (webcam)**
+na tela Camera ao Vivo. A escolha e local a essa tela: nao muda o `.env`, nao altera
+a camera dos outros computadores e volta ao padrao do servidor ao recarregar/sair.
+No notebook Acer, o navegador abre a webcam padrao do proprio notebook.
+
+Acesse pelo dominio HTTPS e autorize a camera quando o navegador solicitar. HTTP
+por IP da rede (por exemplo, `http://192.168.1.250:8081`) normalmente nao permite
+webcam; `localhost` e a excecao para desenvolvimento. Se aparecer permissao negada
+ou camera ocupada, libere a permissao ou feche o outro programa e clique Ativar webcam.
+
+Na webcam, o video e exibido localmente. Um quadro JPEG e enviado para OCR a cada
+1500 ms apos a resposta anterior, sem pedidos simultaneos e somente com a aba
+visivel. Duas leituras confirmadas permitem entrada automatica com as mesmas regras
+da IP. A foto associada a entrada vem da webcam, sem depender da camera IP.
+O recorte configurado para a IP nao e aplicado a webcam.
+
+Mantenha **Camera ao Vivo** aberta e visivel para o OCR local. A tela Registrar
+Entrada continua acompanhando a fonte configurada no servidor. Desligar a webcam,
+trocar para IP ou sair da pagina libera o dispositivo e interrompe novos envios;
+um pedido ja enviado pode terminar. Capturar Imagem e Testar leitura OCR usam a
+camera escolhida. O seletor e as rotas `/api/camera/local/**` sao exclusivos de
+administrador; os demais perfis mantem o acesso que ja tinham a fonte do servidor.
+
+O acesso fisico a webcam depende da permissao do navegador; testes automatizados
+simulam o dispositivo, portanto confirme a webcam do Acer antes da apresentacao.
+Referencia: [getUserMedia e HTTPS](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia).
+
+## Camera IP
+
 O acompanhamento autenticado (`POST /api/camera/ocr/acompanhar`) ativa a leitura
 enquanto **Camera ao Vivo** ou **Registrar Entrada** estiver aberta. Fechar essas
 telas interrompe o acompanhamento; este modo nao e um leitor autonomo 24 horas.

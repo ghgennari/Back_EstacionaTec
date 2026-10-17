@@ -129,4 +129,10 @@ public class ReconhecimentoPlacaService {
                 UUID.randomUUID().toString(), placa, confidence, Instant.ofEpochMilli(agora));
         ultimaConfirmada = estado;
     }
+
+    // Instancias de leitura local sao isoladas por sessao e nao executam o agendamento IP.
+    synchronized Estado processarLocal(List<OcrClient.Leitura> leituras, long agora) {
+        processar(leituras, agora);
+        return estado;
+    }
 }

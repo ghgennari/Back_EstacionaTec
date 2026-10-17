@@ -38,6 +38,17 @@ class EntradaOcrTests {
     }
 
     @Test
+    void fotoLocalSubstituiCapturaIpNaEntradaAutomatica() {
+        byte[] quadro = {1, 2, 3};
+        when(movimentos.registrar(any(), anyString(), anyLong())).thenReturn(123L);
+        when(movimentos.resposta(123L, null)).thenReturn(new MovimentacaoResponse(123L, 1L, "ABC-1234",
+                "Pessoa", "Aluno", "Carro", null, null, "ABERTA", null));
+        service.registrar(estado("DETECTADA", Instant.now()), 1L, quadro);
+        verify(movimentos).capturarImagemEntradaWebcam(123L, 1L, quadro);
+        verify(movimentos, never()).capturarImagemEntrada(anyLong(), anyLong());
+    }
+
+    @Test
     void naoRegistraLeituraIncompletaOuAntiga() {
         service.registrar(estado("CONFIRMANDO", Instant.now()), 1L);
         service.registrar(estado("DETECTADA", Instant.now().minusSeconds(10)), 1L);

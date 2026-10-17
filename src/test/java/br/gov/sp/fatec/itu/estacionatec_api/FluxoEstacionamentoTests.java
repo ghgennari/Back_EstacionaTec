@@ -598,6 +598,21 @@ class FluxoEstacionamentoTests {
         return json(response).path("id").asLong();
     }
 
+    @Test
+    void somenteAdministradorUsaAlternativaLocalMesmoComFonteIp() throws Exception {
+        org.mockito.Mockito.doReturn(false).when(camera).usaWebcam();
+        var output = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB), "png", output);
+        var response = uploadBytes("/camera/local/capturar", output.toByteArray());
+        assertThat(response.statusCode()).isEqualTo(201);
+        assertThat(imagens.findById(json(response).path("id").asLong()).orElseThrow().getOrigem()).isEqualTo("WEBCAM");
+        token = json(request("POST", "/auth/login", Map.of("email", "marcos@edu.br",
+                "password", "EstacionaTec@123"))).path("token").asText();
+        assertThat(uploadBytes("/camera/local/capturar", output.toByteArray()).statusCode()).isEqualTo(403);
+        assertThat(uploadBytes("/camera/local/ocr", output.toByteArray()).statusCode()).isEqualTo(403);
+        org.mockito.Mockito.verify(camera, org.mockito.Mockito.never()).capturar();
+    }
+
     private HttpResponse<String> uploadBytes(byte[] bytes) throws Exception {
         return uploadBytes("/imagens", bytes);
     }

@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health", "/api/auth/login", "/h2-console/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/camera/local/**").hasRole("Administrador")
                         .requestMatchers("/api/usuarios/**", "/api/pessoas/**", "/api/relatorios/**")
                         .hasRole("Administrador")
                         .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
