@@ -205,7 +205,7 @@ public class CadastroService {
     public UsuarioResponse usuarioDto(Usuario u) {
         return new UsuarioResponse(u.getId(), u.getPessoa().getNome(), u.getUsername(),
                 u.getPessoa().getEmail(), u.getPerfil().getNome(), u.isAtivo() ? "Ativo" : "Inativo",
-                u.getPessoa().getDocumento(), u.getPessoa().getTelefone());
+                u.getPessoa().getDocumento(), u.getPessoa().getTelefone(), u.getPessoa().getId());
     }
 
     public static String normalizarPlaca(String valor) {

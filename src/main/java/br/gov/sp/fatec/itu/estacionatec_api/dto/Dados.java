@@ -39,7 +39,7 @@ public final class Dados {
     }
 
     public record UsuarioResponse(Long id, String name, String username, String email,
-            String role, String status, String document, String phone) {
+            String role, String status, String document, String phone, Long personId) {
     }
 
     public record LoginRequest(@NotBlank String email, @NotBlank String password) {
