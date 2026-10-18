@@ -65,7 +65,7 @@ public class DadosTesteLoader implements CommandLineRunner {
             Pessoa pessoa = new Pessoa();
             pessoa.setNome(texto(node, "name"));
             String documento = texto(node, "document");
-            pessoa.setDocumento(documento == null ? null : documento.replaceAll("\\W", ""));
+            pessoa.setDocumento(documento);
             pessoa.setEmail(texto(node, "email"));
             pessoa.setTelefone(texto(node, "phone"));
             pessoa.setCategoria(texto(node, "type"));

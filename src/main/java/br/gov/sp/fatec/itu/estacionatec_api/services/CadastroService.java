@@ -48,7 +48,7 @@ public class CadastroService {
                 && !usuarios.existsByAtivoTrueAndPessoaAtivoTrueAndPerfilNomeAndPessoaIdNot("Administrador", id)) {
             throw ultimoAdministrador();
         }
-        String documento = dados.document().replaceAll("[^a-zA-Z0-9]", "");
+        String documento = DadosPessoais.documento(dados.document());
         if (documento.isBlank()) {
             throw RegraNegocioException.conflito("Informe um documento válido.");
         }

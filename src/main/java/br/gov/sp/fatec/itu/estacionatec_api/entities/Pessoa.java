@@ -1,6 +1,7 @@
 package br.gov.sp.fatec.itu.estacionatec_api.entities;
 
 import jakarta.persistence.*;
+import br.gov.sp.fatec.itu.estacionatec_api.services.DadosPessoais;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -57,7 +58,7 @@ public class Pessoa implements Serializable {
     }
 
     public void setDocumento(String documento) {
-        this.documento = documento;
+        this.documento = DadosPessoais.documento(documento);
     }
 
     public String getEmail() {
@@ -73,7 +74,14 @@ public class Pessoa implements Serializable {
     }
 
     public void setTelefone(String telefone) {
-        this.telefone = telefone;
+        this.telefone = DadosPessoais.telefone(telefone);
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void normalizarDadosPessoais() {
+        documento = DadosPessoais.documento(documento);
+        telefone = DadosPessoais.telefone(telefone);
     }
 
     public String getMatricula() {
