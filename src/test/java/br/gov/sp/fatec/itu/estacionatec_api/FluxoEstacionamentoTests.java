@@ -270,7 +270,7 @@ class FluxoEstacionamentoTests {
             long entradaId = json(entrada).path("id").asLong();
             var exclusao = request("DELETE", "/veiculos/" + veiculoId, null);
             assertThat(exclusao.statusCode()).isEqualTo(409);
-            assertThat(json(exclusao).path("message").asText()).contains("permite registrar a saída");
+            assertThat(json(exclusao).path("message").asText()).contains("Registre a saída");
 
             var alteracao = desativarPessoa
                     ? request("PUT", "/pessoas/" + pessoaId, Map.of("name", "Responsável " + numero,

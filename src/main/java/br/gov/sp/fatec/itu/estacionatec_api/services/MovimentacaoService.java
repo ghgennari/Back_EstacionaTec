@@ -172,6 +172,7 @@ public class MovimentacaoService {
         evento.setDocumentoProprietario(veiculo.getPessoa().getDocumento());
         evento.setCategoria(veiculo.getPessoa().getCategoria());
         evento.setModelo(veiculo.getModelo());
+        evento.setMarca(veiculo.getMarca());
         if (!entrada) {
             evento.setEntradaId(eventos.findFirstByVeiculoIdAndTipoEventoOrderByDataHoraDesc(veiculo.getId(), "Entrada")
                     .orElseThrow(() -> RegraNegocioException.conflito("Entrada ativa não encontrada.")).getId());
@@ -209,7 +210,8 @@ public class MovimentacaoService {
                             usarCadastro ? veiculo.getModelo() : evento.getModelo(),
                             evento.getDataHora(), saida.map(EventoAcesso::getDataHora).orElse(null),
                             usarCadastro ? veiculo.getPessoa().getCategoria() : evento.getCategoria(),
-                            veiculo == null ? null : veiculo.getMarca());
+                            usarCadastro ? veiculo.getMarca() : evento.getMarca() != null ? evento.getMarca()
+                                    : veiculo == null ? null : veiculo.getMarca());
                 })
                 .filter(registro -> !somenteAtivos || registro.exit() == null).toList();
     }

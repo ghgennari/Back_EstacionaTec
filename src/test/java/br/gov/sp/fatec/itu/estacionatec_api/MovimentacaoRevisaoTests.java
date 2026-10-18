@@ -23,6 +23,7 @@ class MovimentacaoRevisaoTests {
     @Autowired PessoaRepository pessoas;
     @Autowired UsuarioRepository usuarios;
     @Autowired VeiculoRepository veiculos;
+    @Autowired EventoAcessoRepository eventos;
     @MockitoBean CameraClient camera;
 
     private long operador() {
@@ -81,5 +82,45 @@ class MovimentacaoRevisaoTests {
             assertThat(exception.getStatus().value()).isEqualTo(409);
             return false;
         }
+    }
+
+    @Test
+    void excluiAposSaidaPreservandoEventosEPermiteRecadastro() {
+        var cadastrado = cadastro.salvarVeiculo(null, veiculo("DEL1001"));
+        var entrada = movimentos.registrar(new MovimentacaoRequest("DEL1001", null, UUID.randomUUID().toString(), null), "Entrada", operador());
+        assertThatThrownBy(() -> cadastro.excluirVeiculo(cadastrado.id()))
+                .isInstanceOf(RegraNegocioException.class).hasMessageContaining("Registre a saída");
+        assertThat(veiculos.existsById(cadastrado.id())).isTrue();
+        var saida = movimentos.registrar(new MovimentacaoRequest("DEL1001", null, UUID.randomUUID().toString(), null), "Saída", operador());
+        var antes = movimentos.historico(false).stream().filter(h -> h.id().equals(entrada)).findFirst().orElseThrow();
+        cadastro.excluirVeiculo(cadastrado.id());
+        assertThat(veiculos.existsById(cadastrado.id())).isFalse();
+        assertThat(eventos.findById(entrada).orElseThrow().getVeiculo()).isNull();
+        assertThat(eventos.findById(saida).orElseThrow().getVeiculo()).isNull();
+        assertThat(eventos.findById(saida).orElseThrow().getEntradaId()).isEqualTo(entrada);
+        var depois = movimentos.historico(false).stream().filter(h -> h.id().equals(entrada)).findFirst().orElseThrow();
+        assertThat(depois).isEqualTo(antes);
+        assertThat(movimentos.historico(true)).noneMatch(h -> h.id().equals(entrada));
+        var novo = cadastro.salvarVeiculo(null, veiculo("DEL1001"));
+        assertThat(novo.id()).isNotEqualTo(cadastrado.id());
+        movimentos.registrar(new MovimentacaoRequest("DEL1001", null, UUID.randomUUID().toString(), null), "Entrada", operador());
+        assertThat(eventos.findById(entrada).orElseThrow().getVeiculo()).isNull();
+    }
+
+    @Test
+    void exclusaoEEntradaConcorrentesNaoDeixamVeiculoEstacionadoExcluido() throws Exception {
+        long operador = operador();
+        var cadastrado = cadastro.salvarVeiculo(null, veiculo("DEL1002"));
+        var dados = new MovimentacaoRequest("DEL1002", null, UUID.randomUUID().toString(), null);
+        var inicio = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var a = executor.submit(() -> tentar(inicio, () -> cadastro.excluirVeiculo(cadastrado.id())));
+            var b = executor.submit(() -> tentar(inicio, () -> movimentos.registrar(dados, "Entrada", operador)));
+            inicio.countDown();
+            assertThat(List.of(a.get(10, TimeUnit.SECONDS), b.get(10, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(true, false);
+        }
+        var ativo = movimentos.historico(true).stream().filter(h -> h.plate().equals("DEL-1002")).findFirst();
+        assertThat(veiculos.existsById(cadastrado.id())).isEqualTo(ativo.isPresent());
     }
 }

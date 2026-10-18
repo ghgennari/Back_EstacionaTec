@@ -55,6 +55,8 @@ public class EventoAcesso implements Serializable {
 
     private String modelo;
 
+    private String marca;
+
     // Preenchida somente enquanto a entrada sem cadastro estiver ativa.
     @Column(unique = true, length = 10)
     private String placaVisitanteAtivo;
@@ -200,6 +202,14 @@ public class EventoAcesso implements Serializable {
 
     public void setModelo(String modelo) {
         this.modelo = modelo;
+    }
+
+    public String getMarca() {
+        return marca;
+    }
+
+    public void setMarca(String marca) {
+        this.marca = marca;
     }
 
     public String getStatusCancela() {

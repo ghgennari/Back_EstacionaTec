@@ -9,7 +9,10 @@ public interface EventoAcessoRepository extends JpaRepository<EventoAcesso, Long
     java.util.Optional<EventoAcesso> findByRequestId(String requestId);
     java.util.Optional<EventoAcesso> findFirstByVeiculoIdAndTipoEventoOrderByDataHoraDesc(Long veiculoId, String tipoEvento);
     java.util.Optional<EventoAcesso> findByEntradaId(Long entradaId);
-    boolean existsByVeiculoId(Long veiculoId);
+    @org.springframework.data.jpa.repository.Modifying(flushAutomatically = true)
+    @org.springframework.data.jpa.repository.Query("update EventoAcesso e set e.marca = coalesce(e.marca, :marca), e.veiculo = null where e.veiculo.id = :veiculoId")
+    int desvincularVeiculo(@org.springframework.data.repository.query.Param("veiculoId") Long veiculoId,
+            @org.springframework.data.repository.query.Param("marca") String marca);
     java.util.List<EventoAcesso> findAllByOrderByDataHoraDesc();
 
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)

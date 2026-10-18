@@ -90,6 +90,8 @@ Entrada e saída manuais não exigem câmera nem imagem. As telas não possuem c
 
 Veículos podem ser editados mesmo estando estacionados. A lista de veículos presentes usa o cadastro atualizado, inclusive a placa corrigida; eventos anteriores mantêm seus dados históricos.
 
+Veículos podem ser excluídos após a saída, mesmo com histórico. A exclusão remove o cadastro e preserva as movimentações, seus dados e imagens. Enquanto o veículo estiver estacionado, é necessário registrar a saída antes de excluí-lo.
+
 **Abrir Portão** tenta novamente o comando do evento registrado, com autorização válida por dois minutos e pertencente ao operador. Uma confirmação de abertura não é repetida. Uma falha de hardware não apaga a movimentação já registrada.
 
 ## JSON e dados de demonstração

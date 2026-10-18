@@ -99,12 +99,16 @@ public class CadastroService {
     }
 
     public void excluirVeiculo(Long id) {
-        Veiculo veiculo = veiculos.findById(id)
+        // Serializa a exclusão com cadastro e movimentação, inclusive entradas por OCR.
+        perfis.bloquearPorNome("Porteiro")
+                .orElseThrow(() -> RegraNegocioException.conflito("Perfil de porteiro não configurado."));
+        Veiculo veiculo = veiculos.bloquearPorId(id)
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Veículo não encontrado."));
-        if (eventos.existsByVeiculoId(id) || veiculo.isEstacionado()) {
-            throw RegraNegocioException.conflito("Este veículo não pode ser excluído porque possui histórico ou está no estacionamento. "
-                    + "Desativar a autorização impede novas entradas, mas permite registrar a saída e mantém o histórico.");
+        if (veiculo.isEstacionado()) {
+            throw RegraNegocioException.conflito("Este veículo está no estacionamento. Registre a saída antes de excluí-lo.");
         }
+        // Os eventos mantêm placa, proprietário e demais dados registrados na movimentação.
+        eventos.desvincularVeiculo(id, veiculo.getMarca());
         veiculos.delete(veiculo);
     }
 
