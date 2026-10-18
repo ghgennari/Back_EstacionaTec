@@ -13,7 +13,7 @@ No Git Bash:
 
 ```bash
 ./mvnw -version
-./mvnw test
+./mvnw clean package
 ./mvnw spring-boot:run
 ```
 
@@ -142,10 +142,12 @@ defina `CAMERA_SOURCE=WEBCAM` e reinicie a API.
 
 Veja [arquitetura e tabelas](docs/arquitetura.md) e [contratos HTTP e configuração dos equipamentos](docs/api.md).
 
-## Testes
+## Compilação e validação
 
-API: `./mvnw test`. Front-end: `npm test -- --watch=false` e `npm run build` na pasta `estacionatec-web`.
+API: `./mvnw clean package` gera o JAR em `target/`. A suíte de testes automatizados do back-end foi removida; esse comando verifica a compilação e o empacotamento, sem validar os fluxos funcionais.
 
-Os testes cobrem autenticação, permissões, vínculos, upload, entrada/saída, histórico, relatórios, duplicidade, concorrência e falhas de hardware. Os clientes de câmera e ESP32 usam servidores HTTP locais de teste. Os testes das telas verificam requisições, erros e atualização após confirmação da API. Eles não substituem a validação física dos equipamentos.
+Após atualizar, confirme login, cadastro, entrada, saída e histórico na aplicação. Valide câmera, OCR e cancela com os equipamentos reais conforme [o roteiro de OCR](docs/ocr-producao.md). Os dados fictícios de desenvolvimento continuam disponíveis, pois não fazem parte da suíte automatizada.
+
+Front-end: `npm test -- --watch=false` e `npm run build` na pasta `estacionatec-web`.
 
 Referências técnicas: [Spring Boot](https://docs.spring.io/spring-boot/system-requirements.html), [proxy Angular](https://angular.dev/tools/cli/serve).

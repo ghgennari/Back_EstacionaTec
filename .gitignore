@@ -11,7 +11,6 @@ output/
 *.[pP][dD][fF]
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
-!**/src/test/**/target/
 
 ### STS ###
 .apt_generated
@@ -36,7 +35,6 @@ output/
 /.nb-gradle/
 build/
 !**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/

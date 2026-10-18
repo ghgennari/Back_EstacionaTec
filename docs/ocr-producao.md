@@ -25,8 +25,8 @@ um pedido ja enviado pode terminar. Capturar Imagem e Testar leitura OCR usam a
 camera escolhida. O seletor e as rotas `/api/camera/local/**` sao exclusivos de
 administrador; os demais perfis mantem o acesso que ja tinham a fonte do servidor.
 
-O acesso fisico a webcam depende da permissao do navegador; testes automatizados
-simulam o dispositivo, portanto confirme a webcam do Acer antes da apresentacao.
+O acesso fisico a webcam depende da permissao do navegador; confirme a webcam
+do Acer antes da apresentacao.
 Referencia: [getUserMedia e HTTPS](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia).
 
 ## Camera IP
@@ -104,13 +104,14 @@ fica na LAN; pelo dominio ele atravessa o tunnel e consome upload do servidor.
 
 ## Validacao e limites
 
-Os testes cobrem entrada automatica, duplicatas, rejeicoes, falha de cancela,
-limites da previa e pausa em aba oculta. O teste nativo executa Tesseract real
-com placas sinteticas e uma cena JPEG sintetica de 1920x1080. O Dockerfile executa
-esse teste na imagem de producao durante o build.
+O Dockerfile verifica o executavel Tesseract, as bibliotecas nativas e a presenca
+do modelo de idioma. A suite automatizada do back-end foi removida, incluindo
+o verificador Java de OCR que era executado durante o build. O build nao executa
+mais uma leitura de placa via Tess4J/JNA.
 
-Esses testes nao comprovam leitura pela camera de uma tela fisica. A aprovacao
-desse cenario exige a captura real e a confirmacao do evento no servidor.
+Use Testar leitura OCR para confirmar a integracao Java com o motor em producao.
+A leitura pela camera de uma tela fisica exige a captura real e a confirmacao
+do evento no servidor seguindo o roteiro acima.
 
 Referencias: [qualidade e segmentacao no Tesseract](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html)
 e [visibilidade da pagina](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API).
