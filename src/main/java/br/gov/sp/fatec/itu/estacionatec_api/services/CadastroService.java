@@ -131,6 +131,8 @@ public class CadastroService {
         }
         pessoa.setNome(dados.name().trim());
         pessoa.setEmail(email);
+        pessoa.setDocumento(dados.document());
+        pessoa.setTelefone(dados.phone());
         if (pessoa.getCategoria() == null) {
             pessoa.setCategoria("Funcionário");
         }
@@ -202,7 +204,8 @@ public class CadastroService {
 
     public UsuarioResponse usuarioDto(Usuario u) {
         return new UsuarioResponse(u.getId(), u.getPessoa().getNome(), u.getUsername(),
-                u.getPessoa().getEmail(), u.getPerfil().getNome(), u.isAtivo() ? "Ativo" : "Inativo");
+                u.getPessoa().getEmail(), u.getPerfil().getNome(), u.isAtivo() ? "Ativo" : "Inativo",
+                u.getPessoa().getDocumento(), u.getPessoa().getTelefone());
     }
 
     public static String normalizarPlaca(String valor) {

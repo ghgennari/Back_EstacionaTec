@@ -78,7 +78,7 @@ A conta `juliana@edu.br` está inativa e não pode entrar. As senhas são conver
 
 O administrador gerencia cadastros. Porteiros consultam dados e registram movimentações, imagens e acionamentos. O perfil comum possui consultas, sem permissão para movimentar veículos. As permissões são verificadas pela API. O token expira em oito horas e é invalidado no logout ou quando o servidor reinicia.
 
-CPF e telefone são armazenados sem máscara. A API normaliza os valores mesmo quando recebe pontuação, e a inicialização remove a máscara de telefones antigos. A interface aplica a formatação apenas para exibição e aceita buscas com ou sem máscara. O campo CPF/Documento continua aceitando documentos alfanuméricos.
+No cadastro e na edição de pessoas e usuários, CPF e telefone são obrigatórios: CPF com exatamente 11 dígitos e telefone brasileiro com DDD de 10 ou 11 dígitos. A API exige apenas números nesses campos; a interface aplica a máscara somente para exibição e aceita buscas com ou sem pontuação. A validação confere formato e quantidade, sem calcular os dígitos verificadores do CPF. Telefones antigos são normalizados na inicialização; cadastros antigos incompletos devem ser corrigidos ao editar. A conta inicial criada pelo ambiente do servidor continua acessível para completar seu cadastro.
 
 ## Testar entrada e saída sem equipamentos
 

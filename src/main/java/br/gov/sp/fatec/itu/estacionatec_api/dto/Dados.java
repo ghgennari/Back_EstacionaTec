@@ -8,8 +8,12 @@ public final class Dados {
     }
 
     public record PessoaRequest(@NotBlank @Size(max = 150) String name,
-            @NotBlank @Size(max = 30) String document, @Email @Size(max = 150) String email,
-            @Size(max = 30) String phone, @NotBlank String type, Boolean active) {
+            @NotBlank(message = "Informe o CPF.")
+            @Pattern(regexp = "[0-9]{11}", message = "O CPF deve conter exatamente 11 números, sem pontuação.") String document,
+            @Email @Size(max = 150) String email,
+            @NotBlank(message = "Informe o telefone com DDD.")
+            @Pattern(regexp = "[0-9]{10,11}", message = "O telefone deve conter 10 ou 11 números com DDD, sem pontuação.") String phone,
+            @NotBlank String type, Boolean active) {
     }
 
     public record PessoaResponse(Long id, String name, String document, String email,
@@ -27,11 +31,15 @@ public final class Dados {
 
     public record UsuarioRequest(@NotBlank @Size(max = 150) String name,
             @NotBlank @Size(max = 50) String username, @NotBlank @Email String email,
-            @NotBlank String role, @NotBlank String status, @Size(max = 72) String password) {
+            @NotBlank String role, @NotBlank String status, @Size(max = 72) String password,
+            @NotBlank(message = "Informe o CPF.")
+            @Pattern(regexp = "[0-9]{11}", message = "O CPF deve conter exatamente 11 números, sem pontuação.") String document,
+            @NotBlank(message = "Informe o telefone com DDD.")
+            @Pattern(regexp = "[0-9]{10,11}", message = "O telefone deve conter 10 ou 11 números com DDD, sem pontuação.") String phone) {
     }
 
     public record UsuarioResponse(Long id, String name, String username, String email,
-            String role, String status) {
+            String role, String status, String document, String phone) {
     }
 
     public record LoginRequest(@NotBlank String email, @NotBlank String password) {
