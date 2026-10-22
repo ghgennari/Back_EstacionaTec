@@ -15,7 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class RtspCameraClient {
-    private final String url;
+    private final java.util.List<String> urls;
+    private int enderecoAtual;
     private final String ffmpeg;
     private final String transporte;
     private Process processo;
@@ -26,9 +27,10 @@ public class RtspCameraClient {
     private boolean encerrado;
 
     public RtspCameraClient(@Value("${estacionatec.camera.rtsp-url:}") String url,
+            @Value("${estacionatec.camera.alternative-hosts:}") String alternativas,
             @Value("${estacionatec.camera.ffmpeg:ffmpeg}") String ffmpeg,
             @Value("${estacionatec.camera.rtsp-transport:tcp}") String transporte) {
-        this.url = url;
+        this.urls = EnderecosCamera.listar(url, alternativas);
         Path ffmpegLocal = Path.of("storage", "tools", "ffmpeg.exe");
         this.ffmpeg = "ffmpeg".equals(ffmpeg) && System.getProperty("os.name").startsWith("Windows")
                 && Files.isRegularFile(ffmpegLocal) ? ffmpegLocal.toString() : ffmpeg;
@@ -36,7 +38,7 @@ public class RtspCameraClient {
     }
 
     public boolean configurada() {
-        return !url.isBlank();
+        return !urls.isEmpty();
     }
 
     public synchronized byte[] capturar() {
@@ -68,6 +70,7 @@ public class RtspCameraClient {
         }
         ultimaTentativa = System.nanoTime();
         try {
+            String url = urls.get(enderecoAtual);
             URI endereco = URI.create(url);
             if (!"rtsp".equalsIgnoreCase(endereco.getScheme()) || endereco.getHost() == null
                     || !(transporte.equals("tcp") || transporte.equals("udp"))) {
@@ -143,6 +146,11 @@ public class RtspCameraClient {
             atual.destroyForcibly();
             synchronized (this) {
                 if (processo == atual) {
+                    // A próxima consulta tenta o outro IP após falha da transmissão.
+                    // Encerrar por inatividade mantém o último endereço utilizado.
+                    if (!encerrado && !expirou(ultimaConsulta, 15)) {
+                        enderecoAtual = (enderecoAtual + 1) % urls.size();
+                    }
                     processo = null;
                     quadro = null;
                     notifyAll();
