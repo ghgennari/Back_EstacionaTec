@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 public class OcrClient {
     public record Leitura(String plate, float confidence) { }
 
-    private static final Pattern PLACA = Pattern.compile("(?<![A-Z0-9])[A-Z]{3}[-\\s]*[0-9][A-Z0-9][0-9]{2}(?![A-Z0-9])");
+    private static final Pattern PLACA = Pattern.compile("(?<![A-Z0-9])[A-Z][ \\t]*[A-Z][ \\t]*[A-Z][- \\t]*[0-9][ \\t]*[A-Z0-9][ \\t]*[0-9][ \\t]*[0-9](?![A-Z0-9])");
     private final String dataPath;
     private final double x;
     private final double y;
@@ -65,13 +65,27 @@ public class OcrClient {
         engine.setOcrEngineMode(1);
         engine.setVariable("load_system_dawg", "0");
         engine.setVariable("load_freq_dawg", "0");
+        engine.setVariable("user_defined_dpi", "300");
         engine.setPageSegMode(11);
         List<Leitura> result = new ArrayList<>();
-        var lines = engine.getWords(prepared, ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE);
+        var lines = new ArrayList<>(engine.getWords(prepared, ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE));
         for (var line : lines) {
             for (String plate : extrairPlacas(line.getText())) {
                 result.add(new Leitura(plate, line.getConfidence()));
             }
+        }
+        // Uma segunda segmentação recupera caracteres sob sombra/reflexo moderado.
+        // Só executa quando a passagem original não produziu uma leitura confiável.
+        if (result.stream().noneMatch(l -> l.confidence() >= 70)) {
+            engine.setVariable("thresholding_method", "2"); // Sauvola, disponível no Tesseract 5.
+            var contraste = melhorarContraste(prepared);
+            var alternativas = engine.getWords(contraste, ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE);
+            lines.addAll(alternativas);
+            for (var line : alternativas) {
+                for (String plate : extrairPlacas(line.getText()))
+                    result.add(new Leitura(plate, line.getConfidence()));
+            }
+            engine.setVariable("thresholding_method", "0");
         }
         // Rele as linhas candidatas ampliadas como uma linha unica. Limite de trabalho
         // evita executar dezenas de OCRs em uma cena cheia de texto.
@@ -81,7 +95,7 @@ public class OcrClient {
             if (line.getConfidence() >= 70 && !extrairPlacas(line.getText()).isEmpty()) continue;
             String text = line.getText().replaceAll("[^A-Za-z0-9]", "");
             var box = line.getBoundingBox();
-            if (text.length() < 6 || text.length() > 12 || box.width < box.height * 2
+            if (text.length() < 4 || text.length() > 12 || box.width < box.height * 2
                     || box.width > box.height * 12) continue;
             tentativas++;
             var bounds = new java.awt.Rectangle(Math.max(0, box.x - 10), Math.max(0, box.y - 10),
@@ -102,8 +116,73 @@ public class OcrClient {
                     result.add(new Leitura(plate, word.getConfidence()));
                 }
             }
+            if (result.stream().noneMatch(l -> l.confidence() >= 70)) {
+                engine.setPageSegMode(13);
+                // Restringe caracteres apenas na releitura do recorte, não na cena inteira.
+                engine.setVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-");
+                for (var word : engine.getWords(melhorarContraste(linha), ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE)) {
+                    for (String plate : extrairPlacas(word.getText()))
+                        result.add(new Leitura(plate, word.getConfidence()));
+                }
+                engine.setVariable("tessedit_char_whitelist", "");
+            }
+        }
+        // Placas pequenas em fundo escuro podem não produzir nenhuma linha no PSM 11.
+        // Recortes limitados evitam depender dessa segmentação para iniciar a releitura.
+        if (result.stream().noneMatch(l -> l.confidence() >= 70)) {
+            for (var box : RegioesPlaca.localizar(prepared)) {
+                double factor = Math.min(3, 900.0 / box.width);
+                int w = Math.max(1, (int) (box.width * factor));
+                int h = Math.max(1, (int) (box.height * factor));
+                var crop = new BufferedImage(w + 24, h + 24, BufferedImage.TYPE_BYTE_GRAY);
+                var g = crop.createGraphics();
+                try {
+                    g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, crop.getWidth(), crop.getHeight());
+                    g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                    g.drawImage(prepared.getSubimage(box.x, box.y, box.width, box.height), 12, 12, w, h, null);
+                } finally { g.dispose(); }
+                engine.setPageSegMode(7);
+                var words = engine.getWords(crop, ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE);
+                boolean reconhecida = false;
+                for (var word : words) {
+                    for (String plate : extrairPlacas(word.getText())) {
+                        result.add(new Leitura(plate, word.getConfidence()));
+                        reconhecida |= word.getConfidence() >= 70;
+                    }
+                }
+                if (!reconhecida) {
+                    engine.setPageSegMode(13);
+                    engine.setVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-");
+                    for (var word : engine.getWords(melhorarContraste(crop), ITessAPI.TessPageIteratorLevel.RIL_TEXTLINE)) {
+                        for (String plate : extrairPlacas(word.getText()))
+                            result.add(new Leitura(plate, word.getConfidence()));
+                    }
+                    engine.setVariable("tessedit_char_whitelist", "");
+                }
+            }
         }
         return result;
+    }
+
+    static BufferedImage melhorarContraste(BufferedImage origem) {
+        int[] histograma = new int[256];
+        var raster = origem.getRaster();
+        for (int y = 0; y < origem.getHeight(); y++)
+            for (int x = 0; x < origem.getWidth(); x++) histograma[raster.getSample(x, y, 0)]++;
+        int corte = Math.max(1, origem.getWidth() * origem.getHeight() / 100);
+        int baixo = 0, alto = 255, soma = 0;
+        while (baixo < 255 && soma + histograma[baixo] < corte) soma += histograma[baixo++];
+        soma = 0;
+        while (alto > baixo && soma + histograma[alto] < corte) soma += histograma[alto--];
+        // Não amplifica ruído de quadros quase uniformes ou completamente escuros.
+        if (alto - baixo < 12) return origem;
+        BufferedImage destino = new BufferedImage(origem.getWidth(), origem.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        for (int y = 0; y < origem.getHeight(); y++)
+            for (int x = 0; x < origem.getWidth(); x++) {
+                int valor = (raster.getSample(x, y, 0) - baixo) * 255 / (alto - baixo);
+                destino.getRaster().setSample(x, y, 0, Math.max(0, Math.min(255, valor)));
+            }
+        return destino;
     }
 
     static BufferedImage lerImagem(byte[] bytes) throws java.io.IOException {
