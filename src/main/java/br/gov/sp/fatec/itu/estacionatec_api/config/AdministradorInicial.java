@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
@@ -46,9 +45,9 @@ public class AdministradorInicial implements CommandLineRunner {
         if (usuarios.count() > 0) return;
         if (nome.isBlank() || nome.length() > 150 || username.isBlank() || username.length() > 50
                 || !email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+") || email.length() > 150
-                || senha.length() < 12 || senha.getBytes(StandardCharsets.UTF_8).length > 72
+                || !br.gov.sp.fatec.itu.estacionatec_api.security.PoliticaSenha.forte(senha)
                 || senha.equals("EstacionaTec@123")) {
-            throw new IllegalStateException("Configure ADMIN_NAME, ADMIN_USERNAME, ADMIN_EMAIL e uma ADMIN_PASSWORD própria de 12 caracteres ou mais (até 72 bytes) para a primeira inicialização.");
+            throw new IllegalStateException("Configure ADMIN_NAME, ADMIN_USERNAME, ADMIN_EMAIL e uma ADMIN_PASSWORD própria com pelo menos 12 caracteres, maiúscula, minúscula, número e símbolo, sem espaços (até 72 bytes) para a primeira inicialização.");
         }
         for (String tipo : List.of("Administrador", "Porteiro", "Usuário")) {
             if (perfis.findByNome(tipo).isEmpty()) {
@@ -65,6 +64,7 @@ public class AdministradorInicial implements CommandLineRunner {
         usuario.setPessoa(pessoas.save(pessoa));
         usuario.setUsername(username);
         usuario.setSenha(encoder.encode(senha));
+        usuario.setTrocaSenhaObrigatoria(true);
         usuario.setPerfil(perfis.findByNome("Administrador").orElseThrow());
         usuarios.save(usuario);
     }

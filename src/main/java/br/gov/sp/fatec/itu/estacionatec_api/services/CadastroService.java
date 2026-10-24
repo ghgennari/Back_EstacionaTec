@@ -118,11 +118,11 @@ public class CadastroService {
 
     public UsuarioResponse salvarUsuario(Long id, UsuarioRequest dados) {
         bloquearContas();
-        Usuario usuario = id == null ? new Usuario() : usuarios.findById(id)
+        Usuario usuario = id == null ? new Usuario() : usuarios.bloquearPorId(id)
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Usuário não encontrado."));
-        if (id == null && (dados.password() == null || dados.password().isBlank() || dados.password().length() < 6)) {
-            throw RegraNegocioException.conflito("A senha deve conter pelo menos 6 caracteres.");
-        }
+        if (id == null) br.gov.sp.fatec.itu.estacionatec_api.security.PoliticaSenha.validar(dados.password());
+        else if (dados.password() != null && !dados.password().isEmpty())
+            throw RegraNegocioException.conflito("Use Redefinir senha. A senha definitiva é escolhida pelo próprio usuário.");
         Pessoa pessoa = usuario.getPessoa() == null ? new Pessoa() : usuario.getPessoa();
         String email = dados.email().trim().toLowerCase(Locale.ROOT);
         validarEmailLogin(email, pessoa.getId());
@@ -144,11 +144,9 @@ public class CadastroService {
             throw RegraNegocioException.conflito("Status inválido.");
         }
         usuario.setAtivo(dados.status().equals("Ativo"));
-        if (dados.password() != null && !dados.password().isBlank()) {
-            if (dados.password().length() < 6 || dados.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
-                throw RegraNegocioException.conflito("A senha deve ter ao menos 6 caracteres e até 72 bytes.");
-            }
+        if (id == null) {
             usuario.setSenha(encoder.encode(dados.password()));
+            usuario.setTrocaSenhaObrigatoria(true);
         }
         return usuarioDto(usuarios.saveAndFlush(usuario));
     }

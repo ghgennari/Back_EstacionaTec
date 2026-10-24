@@ -12,8 +12,10 @@ import java.util.List;
 public class UsuarioController {
     private final CadastroService service;
 
-    public UsuarioController(CadastroService service) {
+    private final br.gov.sp.fatec.itu.estacionatec_api.security.SessaoService sessoes;
+    public UsuarioController(CadastroService service, br.gov.sp.fatec.itu.estacionatec_api.security.SessaoService sessoes) {
         this.service = service;
+        this.sessoes = sessoes;
     }
 
     @GetMapping
@@ -30,6 +32,11 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public UsuarioResponse atualizar(@PathVariable Long id, @Valid @RequestBody UsuarioRequest dados) {
         return service.salvarUsuario(id, dados);
+    }
+
+    @PostMapping("/{id}/redefinir-senha")
+    public RedefinicaoResponse redefinir(@PathVariable Long id, org.springframework.security.core.Authentication auth) {
+        return sessoes.redefinir(id, (Long) auth.getPrincipal());
     }
 
     @DeleteMapping("/{id}")

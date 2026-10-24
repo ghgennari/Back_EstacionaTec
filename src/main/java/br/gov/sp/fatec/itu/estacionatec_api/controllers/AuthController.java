@@ -26,6 +26,23 @@ public class AuthController {
         return resposta;
     }
 
+    @PostMapping("/concluir-senha")
+    public Mensagem concluir(@Valid @RequestBody ConcluirSenhaRequest dados, HttpServletRequest request) {
+        limite.iniciar("troca:" + dados.resetToken(), request.getRemoteAddr());
+        sessoes.concluir(dados);
+        return new Mensagem("Senha criada. Entre com sua nova senha.");
+    }
+
+    @PostMapping("/senha")
+    public Mensagem alterar(@Valid @RequestBody TrocaSenhaRequest dados,
+            org.springframework.security.core.Authentication auth, HttpServletRequest request) {
+        Long id = (Long) auth.getPrincipal();
+        limite.iniciar("senha:" + id, request.getRemoteAddr());
+        sessoes.alterar(id, dados);
+        limite.sucesso("senha:" + id);
+        return new Mensagem("Senha alterada. Entre novamente com sua nova senha.");
+    }
+
     @PostMapping("/logout")
     public Mensagem logout(@RequestHeader("Authorization") String authorization) {
         sessoes.logout(authorization.substring(7));

@@ -42,11 +42,17 @@ public final class Dados {
             String role, String status, String document, String phone, Long personId) {
     }
 
-    public record LoginRequest(@NotBlank String email, @NotBlank String password) {
+    public record LoginRequest(@NotBlank @Size(max = 150) String email, @NotBlank @Size(max = 72) String password) {
     }
 
-    public record LoginResponse(String token, UsuarioResponse user) {
+    public record LoginResponse(String token, UsuarioResponse user, boolean passwordChangeRequired, String resetToken) {
     }
+
+    public record TrocaSenhaRequest(@NotBlank @Size(max = 72) String currentPassword,
+            @NotBlank @Size(max = 72) String newPassword, @NotBlank @Size(max = 72) String confirmPassword) { }
+    public record ConcluirSenhaRequest(@NotBlank @Size(max = 128) String resetToken,
+            @NotBlank @Size(max = 72) String newPassword, @NotBlank @Size(max = 72) String confirmPassword) { }
+    public record RedefinicaoResponse(String temporaryPassword, java.time.Instant expiresAt) { }
 
     public record MovimentacaoRequest(@NotBlank String plate, Long imageId,
             @NotBlank @Pattern(regexp = "[0-9a-fA-F-]{36}") String requestId,

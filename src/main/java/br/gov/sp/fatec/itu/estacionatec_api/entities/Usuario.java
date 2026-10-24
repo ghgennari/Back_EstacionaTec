@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+@org.hibernate.annotations.DynamicUpdate
 @Entity
 @Table(name = "usuarios")
 public class Usuario implements Serializable {
@@ -29,6 +30,16 @@ public class Usuario implements Serializable {
     private String senha;
 
     private boolean ativo = true;
+
+    // Nullable para preservar usuários existentes durante o ddl-auto=update.
+    private Boolean trocaSenhaObrigatoria;
+    private java.time.Instant senhaTemporariaExpiraEm;
+
+    public boolean isTrocaSenhaObrigatoria() { return Boolean.TRUE.equals(trocaSenhaObrigatoria); }
+    public void setTrocaSenhaObrigatoria(boolean valor) { trocaSenhaObrigatoria = valor; }
+    public java.time.Instant getSenhaTemporariaExpiraEm() { return senhaTemporariaExpiraEm; }
+    public void setSenhaTemporariaExpiraEm(java.time.Instant valor) { senhaTemporariaExpiraEm = valor; }
+
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
