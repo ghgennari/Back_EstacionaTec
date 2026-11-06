@@ -69,9 +69,7 @@ public class SessaoService {
         if (id.equals(atualId)) throw invalido("Para sua própria conta, use a engrenagem Alterar senha.");
         Usuario usuario = bloquear(id);
         if (!ativo(usuario)) throw invalido("Ative o usuário e a pessoa antes de redefinir a senha.");
-        byte[] bytes = new byte[18];
-        new java.security.SecureRandom().nextBytes(bytes);
-        String temporaria = "Aa1!" + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String temporaria = "Estacionatec@123";
         Instant expira = Instant.now().plusSeconds(1800);
         usuario.setSenha(encoder.encode(temporaria));
         usuario.setTrocaSenhaObrigatoria(true);
