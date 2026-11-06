@@ -53,7 +53,7 @@ public class CancelaService {
         if (!evento.isAcessoAutorizado() || !usuarioId.equals(evento.getUsuarioId())
                 || evento.getDataHora().isBefore(LocalDateTime.now().minusMinutes(2))
                 || (evento.getTipoEvento().equals("Entrada") && evento.getVeiculo() != null
-                        && (!evento.getVeiculo().isAutorizado() || !evento.getVeiculo().getPessoa().isAtivo()))) {
+                        && (!evento.getVeiculo().isAutorizado() || !evento.getVeiculo().possuiProprietarioAtivo()))) {
             throw RegraNegocioException.conflito("Abertura não autorizada para este evento ou autorização expirada.");
         }
         if (evento.getStatusCancela().equals("ABERTA")) {

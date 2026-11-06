@@ -18,6 +18,46 @@ public class Veiculo implements Serializable {
     @JoinColumn(name = "pessoa_id")
     private Pessoa pessoa;
 
+    // Mantém pessoa_id para preservar os vínculos dos cadastros existentes.
+    @ManyToMany
+    @JoinTable(name = "veiculo_proprietarios_adicionais",
+            joinColumns = @JoinColumn(name = "veiculo_id"),
+            inverseJoinColumns = @JoinColumn(name = "pessoa_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"veiculo_id", "pessoa_id"}))
+    @OrderBy("id ASC")
+    private java.util.Set<Pessoa> proprietariosAdicionais = new java.util.LinkedHashSet<>();
+
+    public java.util.List<Pessoa> getProprietarios() {
+        var todos = new java.util.LinkedHashSet<Pessoa>();
+        if (pessoa != null) todos.add(pessoa);
+        todos.addAll(proprietariosAdicionais);
+        return java.util.List.copyOf(todos);
+    }
+
+    public void setProprietarios(java.util.List<Pessoa> proprietarios) {
+        pessoa = proprietarios.getFirst();
+        proprietariosAdicionais.clear();
+        proprietariosAdicionais.addAll(proprietarios.subList(1, proprietarios.size()));
+    }
+
+    public boolean possuiProprietarioAtivo() {
+        return getProprietarios().stream().anyMatch(Pessoa::isAtivo);
+    }
+
+    public String nomesProprietarios() {
+        return getProprietarios().stream().map(Pessoa::getNome)
+                .collect(java.util.stream.Collectors.joining(" / "));
+    }
+
+    public String categoriasProprietarios() {
+        return getProprietarios().stream().map(Pessoa::getCategoria).distinct()
+                .collect(java.util.stream.Collectors.joining(" / "));
+    }
+
+    public String documentoProprietarioUnico() {
+        return getProprietarios().size() == 1 ? pessoa.getDocumento() : null;
+    }
+
     @Column(nullable = false, unique = true, length = 10)
     private String placa;
 

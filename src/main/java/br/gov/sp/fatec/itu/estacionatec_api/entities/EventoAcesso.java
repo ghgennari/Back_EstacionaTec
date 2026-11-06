@@ -47,6 +47,7 @@ public class EventoAcesso implements Serializable {
 
     private String placa;
 
+    @Column(length = 4000)
     private String proprietario;
 
     private String documentoProprietario;

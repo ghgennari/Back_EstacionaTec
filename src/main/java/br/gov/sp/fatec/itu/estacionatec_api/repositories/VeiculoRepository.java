@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface VeiculoRepository extends JpaRepository<Veiculo, Long> {
     java.util.Optional<Veiculo> findByPlaca(String placa);
-    boolean existsByPessoaId(Long pessoaId);
+    boolean existsByPessoaIdOrProprietariosAdicionaisId(Long pessoaId, Long adicionalId);
     java.util.List<Veiculo> findByEstacionadoTrue();
 
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)

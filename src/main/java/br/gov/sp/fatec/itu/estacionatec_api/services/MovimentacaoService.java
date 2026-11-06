@@ -156,7 +156,7 @@ public class MovimentacaoService {
 
     private void preencherMovimentacaoCadastrada(EventoAcesso evento, Veiculo veiculo,
             MovimentacaoRequest dados, boolean entrada) {
-        if (entrada && (!veiculo.isAutorizado() || !veiculo.getPessoa().isAtivo())) {
+        if (entrada && (!veiculo.isAutorizado() || !veiculo.possuiProprietarioAtivo())) {
             throw RegraNegocioException.conflito("Veículo ou proprietário sem autorização ativa.");
         }
         if (dados.visitor() != null) {
@@ -168,9 +168,9 @@ public class MovimentacaoService {
         }
         evento.setVeiculo(veiculo);
         evento.setPlaca(veiculo.getPlaca());
-        evento.setProprietario(veiculo.getPessoa().getNome());
-        evento.setDocumentoProprietario(veiculo.getPessoa().getDocumento());
-        evento.setCategoria(veiculo.getPessoa().getCategoria());
+        evento.setProprietario(veiculo.nomesProprietarios());
+        evento.setDocumentoProprietario(veiculo.documentoProprietarioUnico());
+        evento.setCategoria(veiculo.categoriasProprietarios());
         evento.setModelo(veiculo.getModelo());
         evento.setMarca(veiculo.getMarca());
         if (!entrada) {
@@ -205,11 +205,11 @@ public class MovimentacaoService {
                     // A lista operacional usa o cadastro atual; o histórico mantém os dados do evento.
                     return new HistoricoResponse(evento.getId(), CadastroService.formatarPlaca(
                             usarCadastro ? veiculo.getPlaca() : evento.getPlaca()),
-                            usarCadastro ? veiculo.getPessoa().getNome() : evento.getProprietario(),
-                            usarCadastro ? veiculo.getPessoa().getDocumento() : evento.getDocumentoProprietario(),
+                            usarCadastro ? veiculo.nomesProprietarios() : evento.getProprietario(),
+                            usarCadastro ? veiculo.documentoProprietarioUnico() : evento.getDocumentoProprietario(),
                             usarCadastro ? veiculo.getModelo() : evento.getModelo(),
                             evento.getDataHora(), saida.map(EventoAcesso::getDataHora).orElse(null),
-                            usarCadastro ? veiculo.getPessoa().getCategoria() : evento.getCategoria(),
+                            usarCadastro ? veiculo.categoriasProprietarios() : evento.getCategoria(),
                             usarCadastro ? veiculo.getMarca() : evento.getMarca() != null ? evento.getMarca()
                                     : veiculo == null ? null : veiculo.getMarca());
                 })

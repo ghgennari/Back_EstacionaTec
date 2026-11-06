@@ -63,7 +63,7 @@ public class CadastroService {
     }
 
     public void excluirPessoa(Long id) {
-        if (veiculos.existsByPessoaId(id) || usuarios.existsByPessoaId(id)) {
+        if (veiculos.existsByPessoaIdOrProprietariosAdicionaisId(id, id) || usuarios.existsByPessoaId(id)) {
             throw RegraNegocioException.conflito("Esta pessoa possui veículos ou usuário vinculados.");
         }
         pessoas.delete(pessoas.findById(id)
@@ -84,8 +84,22 @@ public class CadastroService {
         }
         Veiculo veiculo = id == null ? new Veiculo() : veiculos.bloquearPorId(id)
                 .orElseThrow(() -> RegraNegocioException.naoEncontrado("Veículo não encontrado."));
-        veiculo.setPessoa(pessoas.findById(dados.ownerId())
-                .orElseThrow(() -> RegraNegocioException.naoEncontrado("Proprietário não encontrado.")));
+        List<Long> ids = dados.ownerIds();
+        if (ids == null) {
+            // Clientes antigos não devem remover silenciosamente os demais vínculos.
+            var preservados = new java.util.LinkedHashSet<Long>();
+            preservados.add(dados.ownerId());
+            if (id != null) veiculo.getProprietarios().stream()
+                    .map(Pessoa::getId).filter(p -> !p.equals(veiculo.getPessoa().getId()))
+                    .forEach(preservados::add);
+            ids = List.copyOf(preservados);
+        }
+        if (ids.isEmpty() || ids.size() > 20 || !ids.getFirst().equals(dados.ownerId())
+                || new java.util.HashSet<>(ids).size() != ids.size()) {
+            throw RegraNegocioException.conflito("Selecione de 1 a 20 proprietários diferentes, mantendo o primeiro proprietário informado.");
+        }
+        veiculo.setProprietarios(ids.stream().map(p -> pessoas.findById(p)
+                .orElseThrow(() -> RegraNegocioException.naoEncontrado("Proprietário não encontrado."))).toList());
         veiculo.setPlaca(placa);
         veiculo.setModelo(dados.model().trim());
         veiculo.setCor(dados.color());
@@ -196,8 +210,10 @@ public class CadastroService {
 
     public VeiculoResponse veiculoDto(Veiculo v) {
         return new VeiculoResponse(v.getId(), formatarPlaca(v.getPlaca()), v.getModelo(), v.getCor(),
-                v.getPessoa().getId(), v.getPessoa().getNome(), v.getTipo(), v.getPessoa().getCategoria(),
-                v.getMarca(), v.isAutorizado());
+                v.getPessoa().getId(), v.nomesProprietarios(), v.getTipo(), v.categoriasProprietarios(),
+                v.getMarca(), v.isAutorizado(), v.getProprietarios().stream().map(Pessoa::getId).toList(),
+                v.getProprietarios().stream().map(p -> new ProprietarioResponse(
+                        p.getId(), p.getNome(), p.getCategoria(), p.isAtivo())).toList());
     }
 
     public UsuarioResponse usuarioDto(Usuario u) {

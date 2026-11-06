@@ -140,9 +140,9 @@ public class DadosTesteLoader implements CommandLineRunner {
         evento.setAcessoAutorizado(true);
         evento.setEntradaId(entradaId);
         evento.setPlaca(veiculo.getPlaca());
-        evento.setProprietario(veiculo.getPessoa().getNome());
-        evento.setDocumentoProprietario(veiculo.getPessoa().getDocumento());
-        evento.setCategoria(veiculo.getPessoa().getCategoria());
+        evento.setProprietario(veiculo.nomesProprietarios());
+        evento.setDocumentoProprietario(veiculo.documentoProprietarioUnico());
+        evento.setCategoria(veiculo.categoriasProprietarios());
         evento.setModelo(veiculo.getModelo());
         evento.setStatusCancela("DEMONSTRACAO");
         evento.setObservacao("Importado do protótipo. Não existia arquivo de imagem nem acionamento real.");

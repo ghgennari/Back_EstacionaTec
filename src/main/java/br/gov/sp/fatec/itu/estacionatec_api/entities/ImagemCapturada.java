@@ -23,6 +23,7 @@ public class ImagemCapturada implements Serializable {
 
     private String placaDetectada;
 
+    @Column(length = 4000)
     private String proprietario;
 
     private String tipoEvento;

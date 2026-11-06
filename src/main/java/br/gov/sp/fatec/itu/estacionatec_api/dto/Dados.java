@@ -22,12 +22,16 @@ public final class Dados {
 
     public record VeiculoRequest(@NotBlank String plate, @NotBlank @Size(max = 50) String model,
             @Size(max = 30) String color, @NotNull Long ownerId, @NotBlank String type,
-            @Size(max = 50) String brand, Boolean authorized) {
+            @Size(max = 50) String brand, Boolean authorized,
+            @Size(min = 1, max = 20) java.util.List<@NotNull @Positive Long> ownerIds) {
     }
 
     public record VeiculoResponse(Long id, String plate, String model, String color, Long ownerId,
-            String owner, String type, String category, String brand, boolean authorized) {
+            String owner, String type, String category, String brand, boolean authorized,
+            java.util.List<Long> ownerIds, java.util.List<ProprietarioResponse> owners) {
     }
+
+    public record ProprietarioResponse(Long id, String name, String category, boolean active) { }
 
     public record UsuarioRequest(@NotBlank @Size(max = 150) String name,
             @NotBlank @Size(max = 50) String username, @NotBlank @Email String email,
